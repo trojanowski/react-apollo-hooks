@@ -1,0 +1,32 @@
+{
+  "name": "react-apollo-hooks",
+  "version": "0.0.1",
+  "description": "",
+  "main": "lib/index.js",
+  "module": "es/index.js",
+  "files": [
+    "es",
+    "lib"
+  ],
+  "scripts": {
+    "build:cjs": "babel src -d lib",
+    "build:es": "cross-env ES_MODULES=true babel src -d es",
+    "build": "npm run build:cjs && npm run build:es",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Daniel Trojanowski",
+  "license": "MIT",
+  "peerDependencies": {
+    "react": "^16.7.0-alpha.0"
+  },
+  "dependencies": {
+    "react-fast-compare": "^2.0.2"
+  },
+  "devDependencies": {
+    "@babel/cli": "^7.1.2",
+    "@babel/core": "^7.1.2",
+    "@babel/preset-env": "^7.1.0",
+    "@babel/preset-react": "^7.0.0",
+    "cross-env": "^5.2.0"
+  }
+}
