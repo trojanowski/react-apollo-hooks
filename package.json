@@ -1,6 +1,6 @@
 {
   "name": "react-apollo-hooks",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "",
   "main": "lib/index.js",
   "module": "es/index.js",
@@ -12,10 +12,16 @@
     "build:cjs": "babel src -d lib",
     "build:es": "cross-env ES_MODULES=true babel src -d es",
     "build": "npm run build:cjs && npm run build:es",
+    "prepublish": "npm run build",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "Daniel Trojanowski",
   "license": "MIT",
+  "homepage": "https://github.com/trojanowski/react-apollo-hooks#readme",
+  "repository": {
+    "type" : "git",
+    "url" : "https://github.com/trojanowski/react-apollo-hooks.git"
+  },
   "peerDependencies": {
     "react": "^16.7.0-alpha.0"
   },

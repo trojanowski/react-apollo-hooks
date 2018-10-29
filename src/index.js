@@ -54,10 +54,10 @@ export function useApolloQuery(query, { variables } = {}) {
       throw watchedQuery.result();
     }
     setResult(currentResult);
-    return { ...helpers, result: currentResult };
+    return { ...helpers, ...currentResult };
   }
 
-  return { ...helpers, result };
+  return { ...helpers, ...result };
 }
 
 export function useApolloMutation(mutation, baseOptions) {
