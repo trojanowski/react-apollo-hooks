@@ -3,6 +3,7 @@
   "version": "0.0.2",
   "description": "",
   "main": "lib/index.js",
+  "typings": "index.d.ts",
   "module": "es/index.js",
   "files": [
     "es",
@@ -19,8 +20,8 @@
   "license": "MIT",
   "homepage": "https://github.com/trojanowski/react-apollo-hooks#readme",
   "repository": {
-    "type" : "git",
-    "url" : "https://github.com/trojanowski/react-apollo-hooks.git"
+    "type": "git",
+    "url": "https://github.com/trojanowski/react-apollo-hooks.git"
   },
   "peerDependencies": {
     "react": "^16.7.0-alpha.0"
