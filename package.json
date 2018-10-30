@@ -24,7 +24,11 @@
     "url": "https://github.com/trojanowski/react-apollo-hooks.git"
   },
   "peerDependencies": {
-    "react": "^16.7.0-alpha.0"
+    "apollo-cache-inmemory": "*",
+    "apollo-client": "*",
+    "graphql": "*",
+    "react": "^16.7.0-alpha.0",
+    "react-apollo": "*"
   },
   "dependencies": {
     "react-fast-compare": "^2.0.2"
