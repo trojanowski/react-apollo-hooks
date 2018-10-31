@@ -1,6 +1,6 @@
 # react-apollo-hooks
 
-Hooks to use [Apollo Client](https://github.com/apollographql/apollo-client) as React [hooks](https://reactjs.org/docs/hooks-intro.html).
+Use [Apollo Client](https://github.com/apollographql/apollo-client) as React [hooks](https://reactjs.org/docs/hooks-intro.html).
 
 _Warning: Hooks are currently a React [RFC](https://github.com/reactjs/rfcs/pull/68) and **not ready for production**. Use at minimum `react@16.7.0-alpha.0` to use this package._
 
@@ -111,7 +111,7 @@ const DogWithLikes = ({ url, imageId, isLiked }) => {
 
 ## useApolloClient
 
-```
+```javascript
 const MyComponent = () => {
   const client = useApolloClient();
   // now you have access to the Apollo client
