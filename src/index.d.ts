@@ -6,10 +6,13 @@ import {
   MutationOptions,
   ObservableQuery,
   OperationVariables,
+  QueryOptions,
 } from 'apollo-client';
 import { FetchResult } from 'apollo-link';
 import { DocumentNode } from 'graphql';
 import * as React from 'react';
+
+type Omit<T, K extends keyof T> = Pick<T, Exclude<keyof T, K>>;
 
 export function ApolloProvider<CacheShape = any>(props: {
   children: React.ReactNode;
@@ -20,9 +23,11 @@ export function useApolloClient<CacheShape = any>(): ApolloClient<
   CacheShape
 > | null;
 
+type QueryHookOptions<TVariables> = Omit<QueryOptions<TVariables>, 'query'>;
+
 export function useApolloQuery<TData = any, TVariables = OperationVariables>(
   query: DocumentNode,
-  options?: { variables: TVariables }
+  options?: QueryHookOptions<TVariables>
 ): ApolloQueryResult<TData> & {
   fetchMore<K extends keyof TVariables>(
     fetchMoreOptions: FetchMoreQueryOptions<TVariables, K> &
@@ -30,7 +35,14 @@ export function useApolloQuery<TData = any, TVariables = OperationVariables>(
   ): Promise<ApolloQueryResult<TData>>;
 };
 
-export function useApolloMutation<T, TVariables>(
+type MutationHookOptions<T, TVariables> = Omit<
+  MutationOptions<T, TVariables>,
+  'mutation'
+>;
+
+export function useApolloMutation<T, TVariables = OperationVariables>(
   mutation: DocumentNode,
-  options?: Partial<MutationOptions<T, TVariables>>
-): Promise<FetchResult<T>>;
+  options?: MutationHookOptions<T, TVariables>
+): ((
+  localOptions?: MutationHookOptions<T, TVariables>
+) => Promise<FetchResult<T>>);
