@@ -13,7 +13,7 @@ export function useApolloClient() {
   return useContext(ApolloContext);
 }
 
-export function useApolloQuery(query, { variables } = {}) {
+export function useApolloQuery(query, { variables, ...restOptions } = {}) {
   const client = useApolloClient();
   const [result, setResult] = useState();
   const previousQuery = useRef();
@@ -30,7 +30,7 @@ export function useApolloQuery(query, { variables } = {}) {
         subscription.unsubscribe();
       };
     },
-    [query, objToKey(variables || {})]
+    [query, objToKey(variables), objToKey(restOptions)]
   );
 
   const helpers = {
@@ -45,7 +45,11 @@ export function useApolloQuery(query, { variables } = {}) {
   ) {
     previousQuery.current = query;
     previousVariables.current = variables;
-    const watchedQuery = client.watchQuery({ query, variables });
+    const watchedQuery = client.watchQuery({
+      query,
+      variables,
+      ...restOptions,
+    });
     observableQuery.current = watchedQuery;
     const currentResult = watchedQuery.currentResult();
     if (currentResult.partial) {
@@ -67,6 +71,9 @@ export function useApolloMutation(mutation, baseOptions) {
 }
 
 function objToKey(obj) {
+  if (!obj) {
+    return null;
+  }
   const keys = Object.keys(obj);
   keys.sort();
   const sortedObj = keys.reduce((result, key) => {
