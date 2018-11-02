@@ -6,7 +6,8 @@
   "module": "es/index.js",
   "files": [
     "es",
-    "lib"
+    "lib",
+    "src/index.d.ts"
   ],
   "scripts": {
     "build:cjs": "babel src -d lib",
@@ -19,10 +20,13 @@
   "license": "MIT",
   "homepage": "https://github.com/trojanowski/react-apollo-hooks#readme",
   "repository": {
-    "type" : "git",
-    "url" : "https://github.com/trojanowski/react-apollo-hooks.git"
+    "type": "git",
+    "url": "https://github.com/trojanowski/react-apollo-hooks.git"
   },
+  "types": "./src/index.d.ts",
   "peerDependencies": {
+    "apollo-client": "*",
+    "apollo-link": "*",
     "react": "^16.7.0-alpha.0"
   },
   "dependencies": {
@@ -33,6 +37,12 @@
     "@babel/core": "^7.1.2",
     "@babel/preset-env": "^7.1.0",
     "@babel/preset-react": "^7.0.0",
-    "cross-env": "^5.2.0"
+    "@types/graphql": "^14.0.3",
+    "@types/react": "^16.4.18",
+    "apollo-client": "^2.4.4",
+    "apollo-link": "^1.2.3",
+    "cross-env": "^5.2.0",
+    "graphql": "^14.0.2",
+    "typescript": "^3.1.3"
   }
 }
