@@ -13,11 +13,18 @@ export function useApolloClient() {
   return useContext(ApolloContext);
 }
 
-export function useApolloQuery(query, { variables, ...restOptions } = {}) {
+export function useApolloQuery(
+  query,
+  { variables, context: apolloContextOptions, ...restOptions } = {}
+) {
   const client = useApolloClient();
   const [result, setResult] = useState();
   const previousQuery = useRef();
+  // treat variables and context options separately because they are objects
+  // and the other options are JS primitives
   const previousVariables = useRef();
+  const previousApolloContextOptions = useRef();
+  const previousRestOptions = useRef();
   const observableQuery = useRef();
 
   useEffect(
@@ -30,7 +37,12 @@ export function useApolloQuery(query, { variables, ...restOptions } = {}) {
         subscription.unsubscribe();
       };
     },
-    [query, objToKey(variables), objToKey(restOptions)]
+    [
+      query,
+      objToKey(variables),
+      objToKey(previousApolloContextOptions),
+      objToKey(restOptions),
+    ]
   );
 
   const helpers = {
@@ -40,11 +52,15 @@ export function useApolloQuery(query, { variables, ...restOptions } = {}) {
   if (
     !(
       query === previousQuery.current &&
-      isEqual(variables, previousVariables.current)
+      isEqual(variables, previousVariables.current) &&
+      isEqual(apolloContextOptions, previousApolloContextOptions.current) &&
+      isEqual(restOptions, previousRestOptions.current)
     )
   ) {
     previousQuery.current = query;
     previousVariables.current = variables;
+    previousApolloContextOptions.current = apolloContextOptions;
+    previousRestOptions.current = restOptions;
     const watchedQuery = client.watchQuery({
       query,
       variables,
