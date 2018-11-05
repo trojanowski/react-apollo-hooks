@@ -16,19 +16,49 @@ _Warning: Hooks are currently a React [RFC](https://github.com/reactjs/rfcs/pull
 
 ## ApolloProvider
 
-Similar to [ApolloProvider from react-apollo](https://www.apollographql.com/docs/react/essentials/get-started.html#creating-provider). It's required for hooks to work.
+Similar to [ApolloProvider from react-apollo](https://www.apollographql.com/docs/react/essentials/get-started.html#creating-provider). 
+Both packages can be used together, if you want to try out using hooks and retain `Query`, `Mutation`, `Subscription`, etc. HOCs from `react-apollo` without having to rewrite existing components throughout your app.
+
+In order for this package to work, you need to wrap your component tree with `ApolloProvider` at an appropriate level, encapsulating all components which will use hooks.
+
+### Standalone usage
+
+If you would like to use this package standalone, this can be done with:
 
 ```javascript
 import React from 'react';
 import { render } from 'react-dom';
 
-import { ApolloProvider } from 'react-apollo';
+import { ApolloProvider } from 'react-apollo-hooks';
 
 const client = ... // create Apollo client
 
 const App = () => (
   <ApolloProvider client={client}>
     <MyRootComponent />
+  </ApolloProvider>
+);
+
+render(<App />, document.getElementById('root'));
+```
+### Usage with react-apollo
+
+To use with `react-apollo`'s `ApolloProvider` already present in your project:
+
+```javascript
+import React from 'react';
+import { render } from 'react-dom';
+
+import { ApolloProvider } from 'react-apollo';
+import { ApolloProvider as ApolloHooksProvider } from 'react-apollo-hooks';
+
+const client = ... // create Apollo client
+
+const App = () => (
+  <ApolloProvider client={client}>
+    <ApolloHooksProvider client={client}>
+      <MyRootComponent />
+   </ApolloHooksProvider>
   </ApolloProvider>
 );
 
