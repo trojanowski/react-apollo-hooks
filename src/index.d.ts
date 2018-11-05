@@ -19,13 +19,11 @@ export function ApolloProvider<CacheShape = any>(props: {
   client: ApolloClient<CacheShape>;
 }): JSX.Element;
 
-export function useApolloClient<CacheShape = any>(): ApolloClient<
-  CacheShape
-> | null;
+export function useClient<CacheShape = any>(): ApolloClient<CacheShape> | null;
 
 type QueryHookOptions<TVariables> = Omit<QueryOptions<TVariables>, 'query'>;
 
-export function useApolloQuery<TData = any, TVariables = OperationVariables>(
+export function useQuery<TData = any, TVariables = OperationVariables>(
   query: DocumentNode,
   options?: QueryHookOptions<TVariables>
 ): ApolloQueryResult<TData> & {
@@ -40,7 +38,7 @@ type MutationHookOptions<T, TVariables> = Omit<
   'mutation'
 >;
 
-export function useApolloMutation<T, TVariables = OperationVariables>(
+export function useMutation<T, TVariables = OperationVariables>(
   mutation: DocumentNode,
   options?: MutationHookOptions<T, TVariables>
 ): ((

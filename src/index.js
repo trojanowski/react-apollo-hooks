@@ -9,11 +9,11 @@ export function ApolloProvider({ children, client }) {
   );
 }
 
-export function useApolloClient() {
+export function useClient() {
   return useContext(ApolloContext);
 }
 
-export function useApolloQuery(
+export function useQuery(
   query,
   { variables, context: apolloContextOptions, ...restOptions } = {}
 ) {
@@ -80,8 +80,8 @@ export function useApolloQuery(
   return { ...helpers, ...result };
 }
 
-export function useApolloMutation(mutation, baseOptions) {
-  const client = useApolloClient();
+export function useMutation(mutation, baseOptions) {
+  const client = useClient();
   return localOptions =>
     client.mutate({ mutation, ...baseOptions, ...localOptions });
 }
