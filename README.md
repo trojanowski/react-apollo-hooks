@@ -56,7 +56,7 @@ const App = () => (
   <ApolloProvider client={client}>
    <ApolloHooksProvider client={client}>
     <MyRootComponent />
-  </ApolloProvider>
+    </ApolloHooksProvider>
   </ApolloProvider>
 );
 
