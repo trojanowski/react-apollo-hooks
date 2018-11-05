@@ -13,6 +13,11 @@ export function useClient() {
   return useContext(ApolloContext);
 }
 
+export function useApolloClient() {
+  console.warn('useApolloClient is deprecated, please use useClient');
+  return useClient();
+}
+
 export function useQuery(
   query,
   { variables, context: apolloContextOptions, ...restOptions } = {}
@@ -80,6 +85,11 @@ export function useQuery(
   return { ...helpers, ...result };
 }
 
+export function useApolloQuery(...args) {
+  console.warn('useApolloQuery is deprecated, please use useQuery');
+  return useQuery(...args);
+}
+
 export function useMutation(mutation, baseOptions) {
   const client = useClient();
   return localOptions =>
@@ -97,4 +107,9 @@ function objToKey(obj) {
     return result;
   }, {});
   return JSON.stringify(sortedObj);
+}
+
+export function useApolloMutation(...args) {
+  console.warn('useApolloMutation is deprecated, please use useMutation');
+  return useMutation(...args);
 }
