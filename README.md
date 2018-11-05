@@ -21,8 +21,9 @@ Both packages can be used together, if you want to try out using hooks and retai
 
 In order for this package to work, you need to wrap your component tree with `ApolloProvider` at an appropriate level, encapsulating all components which will use hooks.
 
-### Getting started
-If you use this package standalone, this can be done with:
+### Standalone usage
+
+If you would like to use this package standalone, this can be done with:
 
 ```javascript
 import React from 'react';
@@ -40,6 +41,7 @@ const App = () => (
 
 render(<App />, document.getElementById('root'));
 ```
+### Usage with react-apollo
 
 To use with `react-apollo`'s `ApolloProvider` already present in your project:
 
@@ -54,9 +56,9 @@ const client = ... // create Apollo client
 
 const App = () => (
   <ApolloProvider client={client}>
-   <ApolloHooksProvider client={client}>
-    <MyRootComponent />
-    </ApolloHooksProvider>
+    <ApolloHooksProvider client={client}>
+      <MyRootComponent />
+   </ApolloHooksProvider>
   </ApolloProvider>
 );
 
