@@ -26,7 +26,6 @@
   "types": "./src/index.d.ts",
   "peerDependencies": {
     "apollo-client": "*",
-    "apollo-link": "*",
     "react": "^16.7.0-alpha.0"
   },
   "dependencies": {

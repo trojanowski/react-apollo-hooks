@@ -8,11 +8,18 @@ import {
   OperationVariables,
   QueryOptions,
 } from 'apollo-client';
-import { FetchResult } from 'apollo-link';
-import { DocumentNode } from 'graphql';
+import { DocumentNode, ExecutionResult } from 'graphql';
 import * as React from 'react';
 
 type Omit<T, K extends keyof T> = Pick<T, Exclude<keyof T, K>>;
+
+type FetchResult<
+  C = Record<string, any>,
+  E = Record<string, any>
+> = ExecutionResult<C> & {
+  extensions?: E;
+  context?: C;
+};
 
 export function ApolloProvider<CacheShape = any>(props: {
   children: React.ReactNode;
