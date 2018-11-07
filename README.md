@@ -147,3 +147,8 @@ const MyComponent = () => {
   // now you have access to the Apollo client
 }
 ```
+
+# Testing
+
+An example showing how to test components using react-apollo-hooks:
+<https://github.com/trojanowski/react-apollo-hooks-sample-test>
