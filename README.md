@@ -65,11 +65,11 @@ const App = () => (
 render(<App />, document.getElementById('root'));
 ```
 
-## useApolloQuery
+## useQuery
 
 ```javascript
 import gql from 'graphql-tag';
-import { useApolloQuery } from 'react-apollo-hooks';
+import { useQuery } from 'react-apollo-hooks';
 
 const GET_DOGS = gql`
   {
@@ -81,7 +81,7 @@ const GET_DOGS = gql`
 `;
 
 const Dogs = () => (
-  const { data, error } = useApolloQuery(GET_DOGS);
+  const { data, error } = useQuery(GET_DOGS);
   if (error) return `Error! ${error.message}`;
 
   return (
@@ -112,11 +112,11 @@ const MyComponent = () => {
 }
 ```
 
-## useApolloMutation
+## useMutation
 
 ```javascript
 import gql from 'graphql-tag';
-import { useApolloMutation } from 'react-apollo-hooks';
+import { useMutation } from 'react-apollo-hooks';
 
 const TOGGLE_LIKED_PHOTO = gql`
   mutation toggleLikedPhoto($id: String!) {
@@ -125,7 +125,7 @@ const TOGGLE_LIKED_PHOTO = gql`
 `;
 
 const DogWithLikes = ({ url, imageId, isLiked }) => {
-  const toggleLike = useApolloMutation(TOGGLE_LIKED_PHOTO, {
+  const toggleLike = useMutation(TOGGLE_LIKED_PHOTO, {
     variables: { id: imageId }
   });
   return (

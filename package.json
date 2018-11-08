@@ -29,7 +29,8 @@
     "react": "^16.7.0-alpha.0"
   },
   "dependencies": {
-    "react-fast-compare": "^2.0.2"
+    "react-fast-compare": "^2.0.2",
+    "warning": "^4.0.2"
   },
   "devDependencies": {
     "@babel/cli": "^7.1.2",

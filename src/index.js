@@ -1,6 +1,8 @@
 import React, { useContext, useEffect, useRef, useState } from 'react';
 import isEqual from 'react-fast-compare';
 
+import deprecated from './deprecated';
+
 const ApolloContext = React.createContext();
 
 export function ApolloProvider({ children, client }) {
@@ -13,7 +15,7 @@ export function useApolloClient() {
   return useContext(ApolloContext);
 }
 
-export function useApolloQuery(
+export function useQuery(
   query,
   { variables, context: apolloContextOptions, ...restOptions } = {}
 ) {
@@ -80,7 +82,7 @@ export function useApolloQuery(
   return { ...helpers, ...result };
 }
 
-export function useApolloMutation(mutation, baseOptions) {
+export function useMutation(mutation, baseOptions) {
   const client = useApolloClient();
   return localOptions =>
     client.mutate({ mutation, ...baseOptions, ...localOptions });
@@ -98,3 +100,12 @@ function objToKey(obj) {
   }, {});
   return JSON.stringify(sortedObj);
 }
+
+export const useApolloQuery = deprecated(
+  useQuery,
+  'useApolloQuery is deprecated, please use useQuery'
+);
+export const useApolloMutation = deprecated(
+  useMutation,
+  'useApolloMutation is deprecated, please use useMutation'
+);
