@@ -33,12 +33,18 @@ export function useQuery(
   const previousApolloContextOptions = useRef();
   const previousRestOptions = useRef();
   const observableQuery = useRef();
+  const shouldRefetch = useRef();
 
   useEffect(
     () => {
       const subscription = observableQuery.current.subscribe(nextResult => {
         setResult(nextResult);
       });
+
+      if (shouldRefetch.current) {
+        shouldRefetch.current = false;
+        observableQuery.current.refetch();
+      }
 
       return () => {
         subscription.unsubscribe();
@@ -70,10 +76,21 @@ export function useQuery(
     previousVariables.current = variables;
     previousApolloContextOptions.current = apolloContextOptions;
     previousRestOptions.current = restOptions;
+    shouldRefetch.current = false;
+
+    const { fetchPolicy } = restOptions;
+    // We can't use `cache-and-network` fetch policy directly because it causes
+    // an infinite loop so we emulate it by using the default `cache-first`
+    // policy and then optionally forcing a refetch. Please look at
+    // https://github.com/trojanowski/react-apollo-hooks/issues/13 for details.
+    const emulateCacheAndNetworkPolicy =
+      suspend && fetchPolicy === 'cache-and-network';
+
     const watchedQuery = client.watchQuery({
       query,
       variables,
       ...restOptions,
+      fetchPolicy: emulateCacheAndNetworkPolicy ? 'cache-first' : fetchPolicy,
     });
     observableQuery.current = watchedQuery;
     const currentResult = watchedQuery.currentResult();
@@ -81,8 +98,11 @@ export function useQuery(
       // throw a promise - use the react suspense to wait until the data is
       // available
       throw watchedQuery.result();
+    } else if (emulateCacheAndNetworkPolicy) {
+      shouldRefetch.current = true;
     }
     setResult(currentResult);
+
     return { ...helpers, ...currentResult };
   }
 
@@ -99,7 +119,11 @@ function ensureSupportedFetchPolicy(fetchPolicy, suspend) {
   if (!suspend) {
     return;
   }
-  if (fetchPolicy && fetchPolicy !== 'cache-first') {
+  if (
+    fetchPolicy &&
+    fetchPolicy !== 'cache-first' &&
+    fetchPolicy !== 'cache-and-network'
+  ) {
     throw new Error(
       `Fetch policy ${fetchPolicy} is not supported without 'suspend: false'`
     );
