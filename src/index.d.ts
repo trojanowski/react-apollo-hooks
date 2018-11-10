@@ -31,7 +31,7 @@ export function useApolloClient<CacheShape = any>(): ApolloClient<
 > | null;
 
 type QueryHookOptions<TVariables> = Omit<QueryOptions<TVariables>, 'query'> & {
-  suspend: boolean;
+  suspend?: boolean;
 };
 
 export function useQuery<TData = any, TVariables = OperationVariables>(
