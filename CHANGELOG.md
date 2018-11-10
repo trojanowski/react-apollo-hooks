@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+<a name="0.1.5"></a>
+## [0.1.5](https://github.com/trojanowski/react-apollo-hooks/compare/v0.1.4...v0.1.5) (2018-11-10)
+
+
+### Bug Fixes
+
+* **typescript:** make `suspend` option of `useQuery` hook optional ([7e776a6](https://github.com/trojanowski/react-apollo-hooks/commit/7e776a6))
+
+
+
 <a name="0.1.4"></a>
 ## [0.1.4](https://github.com/trojanowski/react-apollo-hooks/compare/v0.1.3...v0.1.4) (2018-11-10)
 
