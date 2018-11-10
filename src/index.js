@@ -17,7 +17,12 @@ export function useApolloClient() {
 
 export function useQuery(
   query,
-  { variables, context: apolloContextOptions, ...restOptions } = {}
+  {
+    variables,
+    suspend = true,
+    context: apolloContextOptions,
+    ...restOptions
+  } = {}
 ) {
   const client = useApolloClient();
   const [result, setResult] = useState();
@@ -47,6 +52,8 @@ export function useQuery(
     ]
   );
 
+  ensureSupportedFetchPolicy(restOptions.fetchPolicy, suspend);
+
   const helpers = {
     fetchMore: opts => observableQuery.current.fetchMore(opts),
   };
@@ -70,7 +77,7 @@ export function useQuery(
     });
     observableQuery.current = watchedQuery;
     const currentResult = watchedQuery.currentResult();
-    if (currentResult.partial) {
+    if (currentResult.partial && suspend) {
       // throw a promise - use the react suspense to wait until the data is
       // available
       throw watchedQuery.result();
@@ -86,6 +93,17 @@ export function useMutation(mutation, baseOptions) {
   const client = useApolloClient();
   return localOptions =>
     client.mutate({ mutation, ...baseOptions, ...localOptions });
+}
+
+function ensureSupportedFetchPolicy(fetchPolicy, suspend) {
+  if (!suspend) {
+    return;
+  }
+  if (fetchPolicy && fetchPolicy !== 'cache-first') {
+    throw new Error(
+      `Fetch policy ${fetchPolicy} is not supported without 'suspend: false'`
+    );
+  }
 }
 
 function objToKey(obj) {

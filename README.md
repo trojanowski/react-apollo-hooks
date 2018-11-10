@@ -96,7 +96,7 @@ const Dogs = () => (
 );
 ```
 
-Note: to check if data is loaded use the [Suspense](https://reactjs.org/docs/code-splitting.html#suspense) component:
+To check if data is loaded use the [Suspense](https://reactjs.org/docs/code-splitting.html#suspense) component:
 
 ```javascript
 import React, { Suspense } from 'react';
@@ -110,6 +110,34 @@ const MyComponent = () => {
     )
   );
 }
+```
+
+Alternatively you can use the `useQuery` hook without suspense with the
+`{ suspense: false }` option. It's required if you want to use non-standard
+fetch policy. You have to manage loading state by yourself
+in that case:
+
+```javascript
+import gql from 'graphql-tag';
+import { useQuery } from 'react-apollo-hooks';
+
+const GET_DOGS = gql`...`;
+
+const Dogs = () => (
+  const { data, error, loading } = useQuery(GET_DOGS);
+  if (loading) return <div>Loading...</div>;
+  if (error) return `Error! ${error.message}`;
+
+  return (
+    <ul>
+      {data.dogs.map(dog => (
+        <li key={dog.id}>
+          {dog.breed}
+        </li>
+      ))}
+    </ul>
+  );
+);
 ```
 
 ## useMutation
