@@ -80,7 +80,7 @@ const GET_DOGS = gql`
   }
 `;
 
-const Dogs = () => (
+const Dogs = () => {
   const { data, error } = useQuery(GET_DOGS);
   if (error) return `Error! ${error.message}`;
 
@@ -93,7 +93,7 @@ const Dogs = () => (
       ))}
     </ul>
   );
-);
+};
 ```
 
 To check if data is loaded use the [Suspense](https://reactjs.org/docs/code-splitting.html#suspense) component:
@@ -123,7 +123,8 @@ import { useQuery } from 'react-apollo-hooks';
 
 const GET_DOGS = gql`...`;
 
-const Dogs = () => (
+const Dogs = () => {
+  const { data, error, loading } = useQuery(GET_DOGS, { suspend: false });
   const { data, error, loading } = useQuery(GET_DOGS);
   if (loading) return <div>Loading...</div>;
   if (error) return `Error! ${error.message}`;
@@ -131,13 +132,12 @@ const Dogs = () => (
   return (
     <ul>
       {data.dogs.map(dog => (
-        <li key={dog.id}>
-          {dog.breed}
-        </li>
+        <li key={dog.id}>{dog.breed}</li>
       ))}
     </ul>
   );
-);
+};
+
 ```
 
 ## useMutation
