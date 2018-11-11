@@ -113,7 +113,7 @@ const MyComponent = () => {
 ```
 
 Alternatively you can use the `useQuery` hook without suspense with the
-`{ suspense: false }` option. It's required if you want to use non-standard
+`{ suspend: false }` option. It's required if you want to use non-standard
 fetch policy. You have to manage loading state by yourself
 in that case:
 
