@@ -169,6 +169,45 @@ const DogWithLikes = ({ url, imageId, isLiked }) => {
 };
 ```
 
+You can provide any [mutation options](https://www.apollographql.com/docs/react/api/apollo-client.html#ApolloClient.mutate)
+as an argument to the `useMutation` hook or to the function returned by it, e. g.:
+
+```javascript
+function AddTaskForm() {
+  const inputRef = useRef();
+  const addTask = useMutation(ADD_TASK_MUTATION, {
+    update: (proxy, mutationResult) => {
+      /* your custom update logic */
+    },
+    variables: {
+      text: inputRef.current.value,
+    },
+  });
+
+  return (
+    <form>
+      <input ref={inputRef} />
+      <button onClick={addTask}>Add task</button>
+    </form>
+  );
+}
+```
+
+Or:
+
+```javascript
+function TasksWithMutation() {
+  const toggleTask = useMutation(TOGGLE_TASK_MUTATION);
+
+  return (
+    <TaskList
+      onChange={task => toggleTask({ variables: { taskId: task.id } })}
+      tasks={data.tasks}
+    />
+  );
+}
+```
+
 ## useApolloClient
 
 ```javascript
