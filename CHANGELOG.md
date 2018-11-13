@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+<a name="0.1.6"></a>
+## [0.1.6](https://github.com/trojanowski/react-apollo-hooks/compare/v0.1.5...v0.1.6) (2018-11-13)
+
+
+### Features
+
+* **typescript:** add `notifyOnNetworkStatusChange` and `pollInterval` to `useQuery` options in TypeScript definitions ([f2db5b3](https://github.com/trojanowski/react-apollo-hooks/commit/f2db5b3)), closes [#18](https://github.com/trojanowski/react-apollo-hooks/issues/18)
+
+
+
 <a name="0.1.5"></a>
 ## [0.1.5](https://github.com/trojanowski/react-apollo-hooks/compare/v0.1.4...v0.1.5) (2018-11-10)
 
