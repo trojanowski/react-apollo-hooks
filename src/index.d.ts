@@ -31,6 +31,10 @@ export function useApolloClient<CacheShape = any>(): ApolloClient<
 > | null;
 
 type QueryHookOptions<TVariables> = Omit<QueryOptions<TVariables>, 'query'> & {
+  // watch query options from apollo client
+  notifyOnNetworkStatusChange?: boolean;
+  pollInterval?: number;
+  // custom options of `useQuery` hook
   suspend?: boolean;
 };
 
