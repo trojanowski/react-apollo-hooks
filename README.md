@@ -1,8 +1,11 @@
 # react-apollo-hooks
 
-Use [Apollo Client](https://github.com/apollographql/apollo-client) as React [hooks](https://reactjs.org/docs/hooks-intro.html).
+Use [Apollo Client](https://github.com/apollographql/apollo-client) as React
+[hooks](https://reactjs.org/docs/hooks-intro.html).
 
-_Warning: Hooks are currently a React [RFC](https://github.com/reactjs/rfcs/pull/68) and **not ready for production**. Use at minimum `react@16.7.0-alpha.0` to use this package._
+_Warning: Hooks are currently a React
+[RFC](https://github.com/reactjs/rfcs/pull/68) and **not ready for production**.
+Use at minimum `react@16.7.0-alpha.0` to use this package._
 
 [![CircleCI](https://circleci.com/gh/trojanowski/react-apollo-hooks.svg?style=svg)](https://circleci.com/gh/trojanowski/react-apollo-hooks)
 
@@ -12,16 +15,22 @@ _Warning: Hooks are currently a React [RFC](https://github.com/reactjs/rfcs/pull
 
 # Example
 
-<https://codesandbox.io/s/8819w85jn9> is a port of Pupstagram sample app to react-apollo-hooks.
+<https://codesandbox.io/s/8819w85jn9> is a port of Pupstagram sample app to
+react-apollo-hooks.
 
 # API
 
 ## ApolloProvider
 
-Similar to [ApolloProvider from react-apollo](https://www.apollographql.com/docs/react/essentials/get-started.html#creating-provider). 
-Both packages can be used together, if you want to try out using hooks and retain `Query`, `Mutation`, `Subscription`, etc. HOCs from `react-apollo` without having to rewrite existing components throughout your app.
+Similar to
+[ApolloProvider from react-apollo](https://www.apollographql.com/docs/react/essentials/get-started.html#creating-provider).
+Both packages can be used together, if you want to try out using hooks and
+retain `Query`, `Mutation`, `Subscription`, etc. HOCs from `react-apollo`
+without having to rewrite existing components throughout your app.
 
-In order for this package to work, you need to wrap your component tree with `ApolloProvider` at an appropriate level, encapsulating all components which will use hooks.
+In order for this package to work, you need to wrap your component tree with
+`ApolloProvider` at an appropriate level, encapsulating all components which
+will use hooks.
 
 ### Standalone usage
 
@@ -43,6 +52,7 @@ const App = () => (
 
 render(<App />, document.getElementById('root'));
 ```
+
 ### Usage with react-apollo
 
 To use with `react-apollo`'s `ApolloProvider` already present in your project:
@@ -89,16 +99,15 @@ const Dogs = () => {
   return (
     <ul>
       {data.dogs.map(dog => (
-        <li key={dog.id}>
-          {dog.breed}
-        </li>
+        <li key={dog.id}>{dog.breed}</li>
       ))}
     </ul>
   );
 };
 ```
 
-To check if data is loaded use the [Suspense](https://reactjs.org/docs/code-splitting.html#suspense) component:
+To check if data is loaded use the
+[Suspense](https://reactjs.org/docs/code-splitting.html#suspense) component:
 
 ```javascript
 import React, { Suspense } from 'react';
@@ -115,9 +124,8 @@ const MyComponent = () => {
 ```
 
 Alternatively you can use the `useQuery` hook without suspense with the
-`{ suspend: false }` option. It's required if you want to use non-standard
-fetch policy. You have to manage loading state by yourself
-in that case:
+`{ suspend: false }` option. It's required if you want to use non-standard fetch
+policy. You have to manage loading state by yourself in that case:
 
 ```javascript
 import gql from 'graphql-tag';
@@ -139,7 +147,6 @@ const Dogs = () => {
     </ul>
   );
 };
-
 ```
 
 ## useMutation
@@ -156,21 +163,21 @@ const TOGGLE_LIKED_PHOTO = gql`
 
 const DogWithLikes = ({ url, imageId, isLiked }) => {
   const toggleLike = useMutation(TOGGLE_LIKED_PHOTO, {
-    variables: { id: imageId }
+    variables: { id: imageId },
   });
   return (
     <div>
       <img src={url} />
-      <button onClick={toggleLike}>
-       {isLiked ? 'Stop liking' : 'like'}
-      </button>
+      <button onClick={toggleLike}>{isLiked ? 'Stop liking' : 'like'}</button>
     </div>
   );
 };
 ```
 
-You can provide any [mutation options](https://www.apollographql.com/docs/react/api/apollo-client.html#ApolloClient.mutate)
-as an argument to the `useMutation` hook or to the function returned by it, e. g.:
+You can provide any
+[mutation options](https://www.apollographql.com/docs/react/api/apollo-client.html#ApolloClient.mutate)
+as an argument to the `useMutation` hook or to the function returned by it, e.
+g.:
 
 ```javascript
 function AddTaskForm() {
@@ -214,7 +221,7 @@ function TasksWithMutation() {
 const MyComponent = () => {
   const client = useApolloClient();
   // now you have access to the Apollo client
-}
+};
 ```
 
 # Testing
