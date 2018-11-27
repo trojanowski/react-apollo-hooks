@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+<a name="0.1.7"></a>
+## [0.1.7](https://github.com/trojanowski/react-apollo-hooks/compare/v0.1.6...v0.1.7) (2018-11-27)
+
+
+### Features
+
+* add more ObservableQuery functions to useQuery ([b0a3923](https://github.com/trojanowski/react-apollo-hooks/commit/b0a3923)), closes [#24](https://github.com/trojanowski/react-apollo-hooks/issues/24)
+
+
+
 <a name="0.1.6"></a>
 ## [0.1.6](https://github.com/trojanowski/react-apollo-hooks/compare/v0.1.5...v0.1.6) (2018-11-13)
 
