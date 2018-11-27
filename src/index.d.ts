@@ -8,6 +8,7 @@ import {
   OperationVariables,
   QueryOptions,
 } from 'apollo-client';
+import { DataProxy } from 'apollo-cache';
 import { DocumentNode, ExecutionResult } from 'graphql';
 import * as React from 'react';
 
@@ -52,10 +53,22 @@ export function useQuery<TData = any, TVariables = OperationVariables>(
     ): Promise<ApolloQueryResult<TData>>;
   };
 
+// We have to redefine MutationUpdaterFn and `update` option of `useMutation`
+// hook because we want them to use our custom parametrized version
+// of `FetchResult` type. Please look at
+// https://github.com/trojanowski/react-apollo-hooks/issues/25
+export type MutationUpdaterFn<
+  T = {
+    [key: string]: any;
+  }
+> = (proxy: DataProxy, mutationResult: FetchResult<T>) => void;
+
 type MutationHookOptions<T, TVariables> = Omit<
   MutationOptions<T, TVariables>,
-  'mutation'
->;
+  'mutation' | 'update'
+> & {
+  update?: MutationUpdaterFn<T>;
+};
 
 export function useMutation<T, TVariables = OperationVariables>(
   mutation: DocumentNode,
