@@ -41,12 +41,16 @@ type QueryHookOptions<TVariables> = Omit<QueryOptions<TVariables>, 'query'> & {
 export function useQuery<TData = any, TVariables = OperationVariables>(
   query: DocumentNode,
   options?: QueryHookOptions<TVariables>
-): ApolloQueryResult<TData> & {
-  fetchMore<K extends keyof TVariables>(
-    fetchMoreOptions: FetchMoreQueryOptions<TVariables, K> &
-      FetchMoreOptions<TData, TVariables>
-  ): Promise<ApolloQueryResult<TData>>;
-};
+): ApolloQueryResult<TData> &
+  Pick<
+    ObservableQuery<TData, TVariables>,
+    'refetch' | 'startPolling' | 'stopPolling' | 'updateQuery'
+  > & {
+    fetchMore<K extends keyof TVariables>(
+      fetchMoreOptions: FetchMoreQueryOptions<TVariables, K> &
+        FetchMoreOptions<TData, TVariables>
+    ): Promise<ApolloQueryResult<TData>>;
+  };
 
 type MutationHookOptions<T, TVariables> = Omit<
   MutationOptions<T, TVariables>,

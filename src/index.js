@@ -56,6 +56,10 @@ export function useQuery(
 
   const helpers = {
     fetchMore: opts => observableQuery.current.fetchMore(opts),
+    refetch: variables => observableQuery.current.refetch(variables),
+    startPolling: interval => observableQuery.current.startPolling(interval),
+    stopPolling: () => observableQuery.current.stopPolling(),
+    updateQuery: updaterFn => observableQuery.current.updateQuery(updaterFn),
   };
 
   if (
