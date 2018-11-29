@@ -135,7 +135,6 @@ const GET_DOGS = gql`...`;
 
 const Dogs = () => {
   const { data, error, loading } = useQuery(GET_DOGS, { suspend: false });
-  const { data, error, loading } = useQuery(GET_DOGS);
   if (loading) return <div>Loading...</div>;
   if (error) return `Error! ${error.message}`;
 
