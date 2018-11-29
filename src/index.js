@@ -3,6 +3,16 @@ import isEqual from 'react-fast-compare';
 
 import deprecated from './deprecated';
 
+const globalConfig = {
+  suspend: true, // should be false for now?
+};
+
+export function setDefaults({ suspend }) {
+  if (typeof suspend !== 'undefined') {
+    globalConfig.suspend = suspend;
+  }
+};
+
 const ApolloContext = React.createContext();
 
 export function ApolloProvider({ children, client }) {
@@ -19,7 +29,7 @@ export function useQuery(
   query,
   {
     variables,
-    suspend = true,
+    suspend = globalConfig.suspend,
     context: apolloContextOptions,
     ...restOptions
   } = {}
