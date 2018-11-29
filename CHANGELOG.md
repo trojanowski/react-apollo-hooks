@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+<a name="0.1.8"></a>
+## [0.1.8](https://github.com/trojanowski/react-apollo-hooks/compare/v0.1.7...v0.1.8) (2018-11-29)
+
+
+### Bug Fixes
+
+* **typescript:** parametrize `update` option of `useMutation` hook ([f8d6c26](https://github.com/trojanowski/react-apollo-hooks/commit/f8d6c26))
+
+
+
 <a name="0.1.7"></a>
 ## [0.1.7](https://github.com/trojanowski/react-apollo-hooks/compare/v0.1.6...v0.1.7) (2018-11-27)
 
