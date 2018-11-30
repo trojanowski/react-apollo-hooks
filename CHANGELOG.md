@@ -2,6 +2,29 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+<a name="0.2.0"></a>
+# [0.2.0](https://github.com/trojanowski/react-apollo-hooks/compare/v0.1.8...v0.2.0) (2018-11-30)
+
+
+### Bug Fixes
+
+* cache queries for not-mounted yet components. It fixes problems with infinite loops after error occurred. ([246208c](https://github.com/trojanowski/react-apollo-hooks/commit/246208c)), closes [#23](https://github.com/trojanowski/react-apollo-hooks/issues/23)
+* remove no longer needed `warning` dependency ([0c4459b](https://github.com/trojanowski/react-apollo-hooks/commit/0c4459b))
+* update React peer dependency ([768d851](https://github.com/trojanowski/react-apollo-hooks/commit/768d851))
+
+
+### Features
+
+* remove deprecated methods ([a601691](https://github.com/trojanowski/react-apollo-hooks/commit/a601691))
+
+
+### BREAKING CHANGES
+
+* minimum supported (and tested) version of React is now 16.7.0-alpha.2
+* `useApolloQuery` and `useApolloMutation` are removed. Please use `useQuery` and `useMutation` instead.
+
+
+
 <a name="0.1.8"></a>
 ## [0.1.8](https://github.com/trojanowski/react-apollo-hooks/compare/v0.1.7...v0.1.8) (2018-11-29)
 
