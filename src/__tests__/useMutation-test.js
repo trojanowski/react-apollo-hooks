@@ -159,7 +159,7 @@ it('should create a function to perform mutations', async () => {
     );
   }
 
-  const client = createClient(TASKS_MOCKS);
+  const client = createClient({ mocks: TASKS_MOCKS });
   const { container } = render(
     <ApolloProvider client={client}>
       <Suspense fallback={<div>Loading</div>}>
@@ -215,7 +215,7 @@ it('should allow to pass options forwarded to the mutation', async () => {
     );
   }
 
-  const client = createClient(TASKS_MOCKS);
+  const client = createClient({ mocks: TASKS_MOCKS });
   const { container, getByTestId } = render(
     <ApolloProvider client={client}>
       <Suspense fallback={<div>Loading</div>}>

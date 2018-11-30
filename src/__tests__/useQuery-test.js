@@ -1,10 +1,7 @@
+import { ApolloLink, Observable } from 'apollo-link';
 import gql from 'graphql-tag';
 import React, { Suspense } from 'react';
-import {
-  cleanup,
-  flushEffects,
-  render,
-} from 'react-testing-library';
+import { cleanup, flushEffects, render } from 'react-testing-library';
 
 import { ApolloProvider, useQuery } from '..';
 import createClient from '../__testutils__/createClient';
@@ -123,12 +120,16 @@ function TasksLoader({ query, ...restOptions }) {
 }
 
 function TasksLoaderWithoutSuspense({ query, ...restOptions }) {
-  const { data, error, loading } = useQuery(query, {
+  const { data, error, errors, loading } = useQuery(query, {
     ...restOptions,
     suspend: false,
   });
+
   if (error) {
     throw error;
+  }
+  if (errors) {
+    throw new Error('Errors');
   }
   if (loading) {
     return 'Loading without suspense';
@@ -139,7 +140,7 @@ function TasksLoaderWithoutSuspense({ query, ...restOptions }) {
 afterEach(cleanup);
 
 it('should return the query data', async () => {
-  const client = createClient(TASKS_MOCKS);
+  const client = createClient({ mocks: TASKS_MOCKS });
   const { container } = render(
     <ApolloProvider client={client}>
       <Suspense fallback={<div>Loading</div>}>
@@ -157,7 +158,7 @@ it('should return the query data', async () => {
 });
 
 it('should work with suspense disabled', async () => {
-  const client = createClient(TASKS_MOCKS);
+  const client = createClient({ mocks: TASKS_MOCKS });
   const { container } = render(
     <ApolloProvider client={client}>
       <TasksLoaderWithoutSuspense query={TASKS_QUERY} />
@@ -173,7 +174,7 @@ it('should work with suspense disabled', async () => {
 });
 
 it('should support query variables', async () => {
-  const client = createClient(TASKS_MOCKS);
+  const client = createClient({ mocks: TASKS_MOCKS });
   const { container } = render(
     <ApolloProvider client={client}>
       <Suspense fallback={<div>Loading</div>}>
@@ -193,7 +194,7 @@ it('should support query variables', async () => {
 });
 
 it('should support updating query variables', async () => {
-  const client = createClient(TASKS_MOCKS);
+  const client = createClient({ mocks: TASKS_MOCKS });
   const { container, getByTestId, queryByTestId, rerender } = render(
     <ApolloProvider client={client}>
       <Suspense fallback={<div data-testid="loading">Loading</div>}>
@@ -235,7 +236,7 @@ it('should support updating query variables', async () => {
 });
 
 it("shouldn't suspend if the data is already cached", async () => {
-  const client = createClient(TASKS_MOCKS);
+  const client = createClient({ mocks: TASKS_MOCKS });
   const { container, getByTestId, queryByTestId, rerender } = render(
     <ApolloProvider client={client}>
       <Suspense fallback={<div>Loading</div>}>
@@ -285,7 +286,7 @@ it("shouldn't suspend if the data is already cached", async () => {
 });
 
 it("shouldn't allow a query with non-standard fetch policy with suspense", async () => {
-  const client = createClient(TASKS_MOCKS);
+  const client = createClient({ mocks: TASKS_MOCKS });
   /* eslint-disable no-console */
   const origConsoleError = console.error;
   console.error = jest.fn();
@@ -304,8 +305,86 @@ it("shouldn't allow a query with non-standard fetch policy with suspense", async
   /* eslint-enable no-console */
 });
 
+it('should forward apollo errors', async () => {
+  class ErrorBoundary extends React.Component {
+    constructor(props) {
+      super(props);
+      this.state = { error: null };
+    }
+
+    static getDerivedStateFromError(error) {
+      return { error };
+    }
+
+    render() {
+      if (this.state.error) {
+        // You can render any custom fallback UI
+        return <p>Error occured: {this.state.error.message}</p>;
+      }
+
+      return this.props.children;
+    }
+  }
+
+  const consoleErrorMock = jest
+    .spyOn(console, 'error')
+    .mockImplementation(() => {});
+
+  const linkReturningError = new ApolloLink(() => {
+    return new Observable(observer => {
+      observer.error(new Error('Simulating network error'));
+    });
+  });
+  const client = createClient({ link: linkReturningError });
+
+  const { container } = render(
+    <ErrorBoundary>
+      <ApolloProvider client={client}>
+        <Suspense fallback={<div>Loading</div>}>
+          <TasksLoader query={TASKS_QUERY} />
+        </Suspense>
+      </ApolloProvider>
+    </ErrorBoundary>
+  );
+  expect(container.textContent).toBe('Loading');
+  flushEffects();
+  await waitForNextTick();
+  expect(container.textContent).toBe(
+    'Error occured: Network error: Simulating network error'
+  );
+
+  consoleErrorMock.mockRestore();
+});
+
+it('should ignore apollo errors by default in non-suspense mode', async () => {
+  const consoleErrorMock = jest
+    .spyOn(console, 'error')
+    .mockImplementation(() => {});
+
+  const linkReturningError = new ApolloLink(() => {
+    return new Observable(observer => {
+      observer.error(new Error('Simulating network error'));
+    });
+  });
+  const client = createClient({ link: linkReturningError });
+  const { container } = render(
+    <ApolloProvider client={client}>
+      <TasksLoaderWithoutSuspense query={TASKS_QUERY} />
+    </ApolloProvider>
+  );
+  expect(container.textContent).toBe('Loading without suspense');
+  flushEffects();
+  await waitForNextTick();
+
+  expect(consoleErrorMock).toHaveBeenCalledTimes(1);
+  expect(consoleErrorMock.mock.calls[0][1]).toBe(
+    'Network error: Simulating network error'
+  );
+  consoleErrorMock.mockRestore();
+});
+
 it('shouldn allow a query with non-standard fetch policy without suspense', async () => {
-  const client = createClient(TASKS_MOCKS);
+  const client = createClient({ mocks: TASKS_MOCKS });
   const { container } = render(
     <ApolloProvider client={client}>
       <TasksLoaderWithoutSuspense

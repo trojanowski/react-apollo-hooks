@@ -2,6 +2,11 @@ import React, { useContext, useEffect, useRef, useState } from 'react';
 import isEqual from 'react-fast-compare';
 
 import deprecated from './deprecated';
+import objToKey from './objToKey';
+import {
+  getCachedObservableQuery,
+  invalidateCachedObservableQuery,
+} from './queryCache';
 
 const ApolloContext = React.createContext();
 
@@ -15,22 +20,10 @@ export function useApolloClient() {
   return useContext(ApolloContext);
 }
 
-export function useQuery(
-  query,
-  {
-    variables,
-    suspend = true,
-    context: apolloContextOptions,
-    ...restOptions
-  } = {}
-) {
+export function useQuery(query, { suspend = true, ...restOptions } = {}) {
   const client = useApolloClient();
   const [result, setResult] = useState();
   const previousQuery = useRef();
-  // treat variables and context options separately because they are objects
-  // and the other options are JS primitives
-  const previousVariables = useRef();
-  const previousApolloContextOptions = useRef();
   const previousRestOptions = useRef();
   const observableQuery = useRef();
 
@@ -39,17 +32,13 @@ export function useQuery(
       const subscription = observableQuery.current.subscribe(nextResult => {
         setResult(nextResult);
       });
+      invalidateCachedObservableQuery(client, query, restOptions);
 
       return () => {
         subscription.unsubscribe();
       };
     },
-    [
-      query,
-      objToKey(variables),
-      objToKey(previousApolloContextOptions),
-      objToKey(restOptions),
-    ]
+    [query, objToKey(restOptions)]
   );
 
   ensureSupportedFetchPolicy(restOptions.fetchPolicy, suspend);
@@ -65,20 +54,12 @@ export function useQuery(
   if (
     !(
       query === previousQuery.current &&
-      isEqual(variables, previousVariables.current) &&
-      isEqual(apolloContextOptions, previousApolloContextOptions.current) &&
       isEqual(restOptions, previousRestOptions.current)
     )
   ) {
     previousQuery.current = query;
-    previousVariables.current = variables;
-    previousApolloContextOptions.current = apolloContextOptions;
     previousRestOptions.current = restOptions;
-    const watchedQuery = client.watchQuery({
-      query,
-      variables,
-      ...restOptions,
-    });
+    const watchedQuery = getCachedObservableQuery(client, query, restOptions);
     observableQuery.current = watchedQuery;
     const currentResult = watchedQuery.currentResult();
     if (currentResult.partial && suspend) {
@@ -108,19 +89,6 @@ function ensureSupportedFetchPolicy(fetchPolicy, suspend) {
       `Fetch policy ${fetchPolicy} is not supported without 'suspend: false'`
     );
   }
-}
-
-function objToKey(obj) {
-  if (!obj) {
-    return null;
-  }
-  const keys = Object.keys(obj);
-  keys.sort();
-  const sortedObj = keys.reduce((result, key) => {
-    result[key] = obj[key];
-    return result;
-  }, {});
-  return JSON.stringify(sortedObj);
 }
 
 export const useApolloQuery = deprecated(
