@@ -17,7 +17,7 @@
     "format": "prettier --write \"**/*.{js,ts,tsx}\"",
     "lint-ci": "eslint --max-warnings=0 .",
     "lint": "eslint .",
-    "prepublish": "npm run build",
+    "prepublishOnly": "npm run build",
     "test": "jest"
   },
   "author": "Daniel Trojanowski",
@@ -72,7 +72,7 @@
     "prettier": "^1.15.2",
     "react": "^16.7.0-alpha.0",
     "react-dom": "^16.7.0-alpha.0",
-    "react-testing-library": "^5.2.3",
+    "react-testing-library": "^5.3.1",
     "rimraf": "^2.6.2",
     "standard-version": "^4.4.0",
     "typescript": "^3.1.3"
