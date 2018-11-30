@@ -1,7 +1,6 @@
 import React, { useContext, useEffect, useRef, useState } from 'react';
 import isEqual from 'react-fast-compare';
 
-import deprecated from './deprecated';
 import objToKey from './objToKey';
 import {
   getCachedObservableQuery,
@@ -90,12 +89,3 @@ function ensureSupportedFetchPolicy(fetchPolicy, suspend) {
     );
   }
 }
-
-export const useApolloQuery = deprecated(
-  useQuery,
-  'useApolloQuery is deprecated, please use useQuery'
-);
-export const useApolloMutation = deprecated(
-  useMutation,
-  'useApolloMutation is deprecated, please use useMutation'
-);

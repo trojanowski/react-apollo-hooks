@@ -76,12 +76,3 @@ export function useMutation<T, TVariables = OperationVariables>(
 ): ((
   localOptions?: MutationHookOptions<T, TVariables>
 ) => Promise<FetchResult<T>>);
-
-/**
- * @deprecated use useQuery instead
- */
-export const useApolloQuery: typeof useQuery;
-/**
- * @deprecated use useMutation instead
- */
-export const useApolloMutation: typeof useMutation;
