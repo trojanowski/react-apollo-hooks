@@ -318,7 +318,6 @@ it('should forward apollo errors', async () => {
 
     render() {
       if (this.state.error) {
-        // You can render any custom fallback UI
         return <p>Error occured: {this.state.error.message}</p>;
       }
 
