@@ -1,6 +1,10 @@
 import gql from 'graphql-tag';
 import React, { Suspense } from 'react';
-import { cleanup, flushEffects, render } from 'react-testing-library';
+import {
+  cleanup,
+  flushEffects,
+  render,
+} from 'react-testing-library';
 
 import { ApolloProvider, useQuery } from '..';
 import createClient from '../__testutils__/createClient';
@@ -101,7 +105,7 @@ const FILTERED_TASKS_QUERY = gql`
 
 function TaskList({ tasks }) {
   return (
-    <ul>
+    <ul data-testid="task-list">
       {tasks.map(task => (
         <li key={task.id}>{task.text}</li>
       ))}
@@ -190,9 +194,9 @@ it('should support query variables', async () => {
 
 it('should support updating query variables', async () => {
   const client = createClient(TASKS_MOCKS);
-  const { container, rerender } = render(
+  const { container, getByTestId, queryByTestId, rerender } = render(
     <ApolloProvider client={client}>
-      <Suspense fallback={<div>Loading</div>}>
+      <Suspense fallback={<div data-testid="loading">Loading</div>}>
         <TasksLoader
           query={FILTERED_TASKS_QUERY}
           variables={{ completed: true }}
@@ -206,7 +210,7 @@ it('should support updating query variables', async () => {
 
   rerender(
     <ApolloProvider client={client}>
-      <Suspense fallback={<div>Loading</div>}>
+      <Suspense fallback={<div data-testid="loading">Loading</div>}>
         <TasksLoader
           query={FILTERED_TASKS_QUERY}
           variables={{ completed: false }}
@@ -215,7 +219,8 @@ it('should support updating query variables', async () => {
     </ApolloProvider>
   );
 
-  expect(container.textContent).toBe('Loading');
+  expect(getByTestId('loading')).toBeVisible();
+  expect(getByTestId('task-list')).not.toBeVisible();
 
   // TODO: It doesn't pass if not invoked twice
   flushEffects();
@@ -223,13 +228,15 @@ it('should support updating query variables', async () => {
   flushEffects();
   await waitForNextTick();
 
+  expect(queryByTestId('loading')).toBeNull();
+  expect(getByTestId('task-list')).toBeVisible();
   expect(container.querySelectorAll('li')).toHaveLength(2);
   expect(container.querySelector('li').textContent).toBe('Learn React');
 });
 
 it("shouldn't suspend if the data is already cached", async () => {
   const client = createClient(TASKS_MOCKS);
-  const { container, rerender } = render(
+  const { container, getByTestId, queryByTestId, rerender } = render(
     <ApolloProvider client={client}>
       <Suspense fallback={<div>Loading</div>}>
         <TasksLoader
@@ -245,7 +252,7 @@ it("shouldn't suspend if the data is already cached", async () => {
 
   rerender(
     <ApolloProvider client={client}>
-      <Suspense fallback={<div>Loading</div>}>
+      <Suspense fallback={<div data-testid="loading">Loading</div>}>
         <TasksLoader
           query={FILTERED_TASKS_QUERY}
           variables={{ completed: false }}
@@ -262,7 +269,7 @@ it("shouldn't suspend if the data is already cached", async () => {
 
   rerender(
     <ApolloProvider client={client}>
-      <Suspense fallback={<div>Loading</div>}>
+      <Suspense fallback={<div data-testid="loading">Loading</div>}>
         <TasksLoader
           query={FILTERED_TASKS_QUERY}
           variables={{ completed: true }}
@@ -271,6 +278,8 @@ it("shouldn't suspend if the data is already cached", async () => {
     </ApolloProvider>
   );
 
+  expect(queryByTestId('loading')).toBeNull();
+  expect(getByTestId('task-list')).toBeVisible();
   expect(container.querySelectorAll('li')).toHaveLength(1);
   expect(container.querySelector('li').textContent).toBe('Learn GraphQL');
 });
