@@ -36,6 +36,20 @@
       "/node_modules/"
     ]
   },
+  "husky": {
+    "hooks": {
+      "pre-commit": "lint-staged"
+    }
+  },
+  "lint-staged": {
+    "**/*.{js,ts,tsx}": [
+      "prettier --single-quote --write",
+      "git add"
+    ],
+    "**/*.js": [
+      "eslint --max-warnings=0"
+    ]
+  },
   "peerDependencies": {
     "apollo-client": "*",
     "react": "^16.7.0-alpha.0"
@@ -69,8 +83,10 @@
     "eslint-plugin-react-hooks": "^0.0.0",
     "graphql": "^14.0.2",
     "graphql-tag": "^2.10.0",
+    "husky": "^1.2.0",
     "jest": "^23.6.0",
     "jest-dom": "^2.1.1",
+    "lint-staged": "^8.1.0",
     "prettier": "^1.15.2",
     "react": "^16.7.0-alpha.2",
     "react-dom": "^16.7.0-alpha.2",
