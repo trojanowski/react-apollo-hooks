@@ -52,6 +52,7 @@
   },
   "peerDependencies": {
     "apollo-client": "*",
+    "graphql": "*",
     "react": "^16.7.0-alpha.2"
   },
   "dependencies": {
