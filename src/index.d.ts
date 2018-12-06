@@ -39,10 +39,7 @@ type QueryHookOptions<TVariables> = Omit<QueryOptions<TVariables>, 'query'> & {
   suspend?: boolean;
 };
 
-export function useQuery<TData = any, TVariables = OperationVariables>(
-  query: DocumentNode,
-  options?: QueryHookOptions<TVariables>
-): ApolloQueryResult<TData> &
+type UseQueryResult<TData, TVariables> = ApolloQueryResult<TData> &
   Pick<
     ObservableQuery<TData, TVariables>,
     'refetch' | 'startPolling' | 'stopPolling' | 'updateQuery'
@@ -52,6 +49,11 @@ export function useQuery<TData = any, TVariables = OperationVariables>(
         FetchMoreOptions<TData, TVariables>
     ): Promise<ApolloQueryResult<TData>>;
   };
+
+export function useQuery<TData = any, TVariables = OperationVariables>(
+  query: DocumentNode,
+  options?: QueryHookOptions<TVariables>
+): UseQueryResult<TData, TVariables>;
 
 // We have to redefine MutationUpdaterFn and `update` option of `useMutation`
 // hook because we want them to use our custom parametrized version
@@ -70,9 +72,11 @@ type MutationHookOptions<T, TVariables> = Omit<
   update?: MutationUpdaterFn<T>;
 };
 
+export type UseMutationFn<T, TVariables> = (
+  localOptions?: MutationHookOptions<T, TVariables>
+) => Promise<FetchResult<T>>;
+
 export function useMutation<T, TVariables = OperationVariables>(
   mutation: DocumentNode,
   options?: MutationHookOptions<T, TVariables>
-): ((
-  localOptions?: MutationHookOptions<T, TVariables>
-) => Promise<FetchResult<T>>);
+): UseMutationFn<T, TVariables>;
