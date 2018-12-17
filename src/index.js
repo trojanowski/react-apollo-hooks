@@ -47,6 +47,7 @@ export function useQuery(query, { suspend = true, ...restOptions } = {}) {
     refetch: variables => observableQuery.current.refetch(variables),
     startPolling: interval => observableQuery.current.startPolling(interval),
     stopPolling: () => observableQuery.current.stopPolling(),
+    subscribeToMore: opts => observableQuery.current.subscribeToMore(opts),
     updateQuery: updaterFn => observableQuery.current.updateQuery(updaterFn),
   };
 
