@@ -75,13 +75,9 @@ export function useQuery(
   ) {
     previousQuery.current = query;
     previousRestOptions.current = restOptions;
-
     const watchedQuery = getCachedObservableQuery(client, query, restOptions);
-
     observableQuery.current = watchedQuery;
-
     const currentResult = watchedQuery.currentResult();
-
     if (currentResult.partial && suspend) {
       // throw a promise - use the react suspense to wait until the data is
       // available
@@ -93,9 +89,7 @@ export function useQuery(
 
   if (!result) {
     const currentResult = observableQuery.current.currentResult();
-
     setResult(currentResult);
-
     return { ...helpers, ...currentResult };
   }
 
