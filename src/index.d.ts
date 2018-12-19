@@ -36,6 +36,7 @@ type QueryHookOptions<TVariables> = Omit<QueryOptions<TVariables>, 'query'> & {
   notifyOnNetworkStatusChange?: boolean;
   pollInterval?: number;
   // custom options of `useQuery` hook
+  skip?: boolean;
   suspend?: boolean;
 };
 
