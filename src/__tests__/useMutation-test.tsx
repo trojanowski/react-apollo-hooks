@@ -7,10 +7,12 @@ import {
   render,
 } from 'react-testing-library';
 
-import { ApolloProvider, useMutation, useQuery } from '..';
+import { ApolloProvider } from '../ApolloContext';
 import createClient from '../__testutils__/createClient';
 import { SAMPLE_TASKS } from '../__testutils__/data';
 import waitForNextTick from '../__testutils__/waitForNextTick';
+import { useQuery } from '../useQuery';
+import { useMutation } from '../useMutation';
 
 const TASKS_MOCKS = [
   {
@@ -117,7 +119,19 @@ const ADD_TASK_MUTATION = gql`
   }
 `;
 
-function Task({ onChange, task }) {
+interface TaskFragment {
+  id: number;
+  text: string;
+  completed: boolean;
+}
+
+function Task({
+  onChange,
+  task,
+}: {
+  task: TaskFragment;
+  onChange: (task: TaskFragment) => void;
+}) {
   return (
     <li>
       <input
@@ -130,7 +144,13 @@ function Task({ onChange, task }) {
   );
 }
 
-function TaskList({ onChange, tasks }) {
+function TaskList({
+  onChange,
+  tasks,
+}: {
+  tasks: Array<TaskFragment>;
+  onChange: (task: TaskFragment) => void;
+}) {
   return (
     <ul>
       {tasks.map(task => (
@@ -163,7 +183,7 @@ it('should create a function to perform mutations', async () => {
   const { container } = render(
     <ApolloProvider client={client}>
       <Suspense fallback={<div>Loading</div>}>
-        <TasksWithMutation query={TASKS_QUERY} />
+        <TasksWithMutation />
       </Suspense>
     </ApolloProvider>
   );
@@ -174,31 +194,38 @@ it('should create a function to perform mutations', async () => {
   flushEffects();
   await waitForNextTick();
 
-  const firstCheckbox = container.querySelector('input:checked');
+  const firstCheckbox = container.querySelector<HTMLInputElement>(
+    'input:checked'
+  )!;
   expect(firstCheckbox.checked).toBeTruthy();
 
   fireEvent.click(firstCheckbox);
   await waitForNextTick();
   flushEffects();
 
-  expect(container.querySelector('input').checked).toBeFalsy();
+  expect(container.querySelector('input')!.checked).toBeFalsy();
 });
 
 it('should allow to pass options forwarded to the mutation', async () => {
   function TasksWithMutation() {
     const { data, error } = useQuery(TASKS_QUERY);
-    const addTask = useMutation(ADD_TASK_MUTATION, {
-      update: (proxy, mutationResult) => {
-        const previousData = proxy.readQuery({ query: TASKS_QUERY });
-        previousData.tasks.push(mutationResult.data.addTask);
-        proxy.writeQuery({ data: previousData, query: TASKS_QUERY });
-      },
-      variables: {
-        input: {
-          text: 'Learn Jest',
+    const addTask = useMutation<any, { input: Partial<TaskFragment> }>(
+      ADD_TASK_MUTATION,
+      {
+        update: (proxy, mutationResult) => {
+          const previousData = proxy.readQuery<{ tasks: TaskFragment[] }>({
+            query: TASKS_QUERY,
+          });
+          previousData!.tasks.push(mutationResult!.data!.addTask);
+          proxy.writeQuery({ data: previousData, query: TASKS_QUERY });
         },
-      },
-    });
+        variables: {
+          input: {
+            text: 'Learn Jest',
+          },
+        },
+      }
+    );
     const onChange = () => {};
 
     if (error) {
@@ -208,7 +235,7 @@ it('should allow to pass options forwarded to the mutation', async () => {
     return (
       <>
         <TaskList onChange={onChange} tasks={data.tasks} />
-        <button data-testid="add-task-button" onClick={addTask}>
+        <button data-testid="add-task-button" onClick={() => addTask()}>
           Add new task
         </button>
       </>
@@ -219,7 +246,7 @@ it('should allow to pass options forwarded to the mutation', async () => {
   const { container, getByTestId } = render(
     <ApolloProvider client={client}>
       <Suspense fallback={<div>Loading</div>}>
-        <TasksWithMutation query={TASKS_QUERY} />
+        <TasksWithMutation />
       </Suspense>
     </ApolloProvider>
   );

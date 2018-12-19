@@ -1,12 +1,13 @@
-import { ApolloLink, Observable } from 'apollo-link';
+import { ApolloLink, Observable, DocumentNode } from 'apollo-link';
 import gql from 'graphql-tag';
-import React, { Suspense } from 'react';
+import React, { Suspense, ReactNode, ReactElement } from 'react';
 import { cleanup, flushEffects, render } from 'react-testing-library';
 
-import { ApolloProvider, useQuery } from '..';
+import { ApolloProvider } from '../ApolloContext';
 import createClient from '../__testutils__/createClient';
 import { SAMPLE_TASKS } from '../__testutils__/data';
 import waitForNextTick from '../__testutils__/waitForNextTick';
+import { useQuery, QueryHookOptions } from '../useQuery';
 
 const TASKS_MOCKS = [
   {
@@ -100,7 +101,7 @@ const FILTERED_TASKS_QUERY = gql`
   }
 `;
 
-function TaskList({ tasks }) {
+function TaskList({ tasks }: { tasks: Array<{ id: number; text: string }> }) {
   return (
     <ul data-testid="task-list">
       {tasks.map(task => (
@@ -110,7 +111,10 @@ function TaskList({ tasks }) {
   );
 }
 
-function TasksLoader({ query, ...restOptions }) {
+function TasksLoader({
+  query,
+  ...restOptions
+}: { query: DocumentNode } & QueryHookOptions<any>) {
   const { data, error } = useQuery(query, restOptions);
   if (error) {
     throw error;
@@ -119,7 +123,10 @@ function TasksLoader({ query, ...restOptions }) {
   return <TaskList tasks={data.tasks} />;
 }
 
-function TasksLoaderWithoutSuspense({ query, ...restOptions }) {
+function TasksLoaderWithoutSuspense({
+  query,
+  ...restOptions
+}: { query: DocumentNode } & QueryHookOptions<any>): ReactElement<object> {
   const { data, error, errors, loading } = useQuery(query, {
     ...restOptions,
     suspend: false,
@@ -132,7 +139,7 @@ function TasksLoaderWithoutSuspense({ query, ...restOptions }) {
     throw new Error('Errors');
   }
   if (loading) {
-    return 'Loading without suspense';
+    return <>Loading without suspense</>;
   }
   return <TaskList tasks={data.tasks} />;
 }
@@ -141,7 +148,7 @@ afterEach(cleanup);
 
 it('should return the query data', async () => {
   const client = createClient({ mocks: TASKS_MOCKS });
-  const { container } = render(
+  const { container, queryByText, queryAllByTestId } = render(
     <ApolloProvider client={client}>
       <Suspense fallback={<div>Loading</div>}>
         <TasksLoader query={TASKS_QUERY} />
@@ -154,7 +161,7 @@ it('should return the query data', async () => {
   await waitForNextTick();
 
   expect(container.querySelectorAll('li')).toHaveLength(3);
-  expect(container.querySelector('li').textContent).toBe('Learn GraphQL');
+  expect(container.querySelector('li')!.textContent).toBe('Learn GraphQL');
 });
 
 it('should work with suspense disabled', async () => {
@@ -170,7 +177,7 @@ it('should work with suspense disabled', async () => {
   await waitForNextTick();
 
   expect(container.querySelectorAll('li')).toHaveLength(3);
-  expect(container.querySelector('li').textContent).toBe('Learn GraphQL');
+  expect(container.querySelector('li')!.textContent).toBe('Learn GraphQL');
 });
 
 it('should support query variables', async () => {
@@ -190,7 +197,7 @@ it('should support query variables', async () => {
   await waitForNextTick();
 
   expect(container.querySelectorAll('li')).toHaveLength(1);
-  expect(container.querySelector('li').textContent).toBe('Learn GraphQL');
+  expect(container.querySelector('li')!.textContent).toBe('Learn GraphQL');
 });
 
 it('should support updating query variables', async () => {
@@ -232,7 +239,7 @@ it('should support updating query variables', async () => {
   expect(queryByTestId('loading')).toBeNull();
   expect(getByTestId('task-list')).toBeVisible();
   expect(container.querySelectorAll('li')).toHaveLength(2);
-  expect(container.querySelector('li').textContent).toBe('Learn React');
+  expect(container.querySelector('li')!.textContent).toBe('Learn React');
 });
 
 it("shouldn't suspend if the data is already cached", async () => {
@@ -282,7 +289,7 @@ it("shouldn't suspend if the data is already cached", async () => {
   expect(queryByTestId('loading')).toBeNull();
   expect(getByTestId('task-list')).toBeVisible();
   expect(container.querySelectorAll('li')).toHaveLength(1);
-  expect(container.querySelector('li').textContent).toBe('Learn GraphQL');
+  expect(container.querySelector('li')!.textContent).toBe('Learn GraphQL');
 });
 
 it("shouldn't allow a query with non-standard fetch policy with suspense", async () => {
@@ -306,13 +313,14 @@ it("shouldn't allow a query with non-standard fetch policy with suspense", async
 });
 
 it('should forward apollo errors', async () => {
-  class ErrorBoundary extends React.Component {
-    constructor(props) {
+  class ErrorBoundary extends React.Component<{}, { error: null | Error }> {
+    constructor(props: {}) {
       super(props);
+
       this.state = { error: null };
     }
 
-    static getDerivedStateFromError(error) {
+    static getDerivedStateFromError(error: Error) {
       return { error };
     }
 

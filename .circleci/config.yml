@@ -29,6 +29,9 @@ jobs:
           name: Check prettier
           command: yarn format-check
       - run:
+          name: Check typings
+          command: yarn typings-check
+      - run:
           name: Lint code
           command: yarn lint-ci
       - run:
