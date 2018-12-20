@@ -29,8 +29,8 @@ export interface QueryHookOptions<TVariables>
 }
 
 export type QueryHookState<TData> = Pick<
-  ApolloCurrentResult<TData>,
-  'data' | 'error' | 'errors' | 'loading'
+  ApolloCurrentResult<undefined | TData>,
+  'error' | 'errors' | 'loading'
 >;
 
 export interface QueryHookResult<TData, TVariables>
