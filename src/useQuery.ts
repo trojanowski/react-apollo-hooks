@@ -49,6 +49,15 @@ export interface QueryHookResult<TData, TVariables>
   ): Promise<ApolloQueryResult<TData>>;
 }
 
+function currentResultToState<TData>({
+  data,
+  error,
+  errors,
+  loading,
+}: ApolloCurrentResult<TData>): QueryHookState<TData> {
+  return { error, errors, loading, data: data as TData };
+}
+
 export function useQuery<TData = any, TVariables = OperationVariables>(
   query: DocumentNode,
   {
@@ -128,36 +137,28 @@ export function useQuery<TData = any, TVariables = OperationVariables>(
       restOptions
     );
     observableQuery.current = watchedQuery;
-    const {
-      partial,
-
-      data,
-      error,
-      errors,
-      loading,
-    } = watchedQuery.currentResult();
-    if (partial && suspend) {
+    const currentResult = watchedQuery.currentResult();
+    if (currentResult.partial && suspend) {
       // throw a promise - use the react suspense to wait until the data is
       // available
       throw watchedQuery.result();
     }
 
-    const currentResult: QueryHookState<TData> = {
-      error,
-      errors,
-      loading,
-      data: data as TData,
-    };
+    const nextState = currentResultToState(currentResult);
 
-    setResult(currentResult);
+    setResult(nextState);
 
-    return { ...helpers, ...currentResult };
+    return { ...helpers, ...nextState };
   }
 
   if (!result) {
-    const currentResult = observableQuery.current!.currentResult();
-    setResult(currentResult);
-    return { ...helpers, ...currentResult };
+    const nextState = currentResultToState(
+      observableQuery.current!.currentResult()
+    );
+
+    setResult(nextState);
+
+    return { ...helpers, ...nextState };
   }
 
   return { ...helpers, ...result! };
