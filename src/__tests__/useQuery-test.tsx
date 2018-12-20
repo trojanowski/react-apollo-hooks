@@ -1,6 +1,6 @@
 import { ApolloLink, Observable, DocumentNode } from 'apollo-link';
 import gql from 'graphql-tag';
-import React, { Suspense, ReactNode, ReactElement } from 'react';
+import React, { Suspense, ReactElement } from 'react';
 import { cleanup, flushEffects, render } from 'react-testing-library';
 
 import { ApolloProvider } from '../ApolloContext';
@@ -148,7 +148,7 @@ afterEach(cleanup);
 
 it('should return the query data', async () => {
   const client = createClient({ mocks: TASKS_MOCKS });
-  const { container, queryByText, queryAllByTestId } = render(
+  const { container } = render(
     <ApolloProvider client={client}>
       <Suspense fallback={<div>Loading</div>}>
         <TasksLoader query={TASKS_QUERY} />
