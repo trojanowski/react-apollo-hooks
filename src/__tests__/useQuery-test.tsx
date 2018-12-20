@@ -123,14 +123,11 @@ function TasksLoader({
   return <TaskList tasks={data.tasks} />;
 }
 
-function TasksLoaderWithoutSuspense({
+function ManagedTasksLoader({
   query,
   ...restOptions
 }: { query: DocumentNode } & QueryHookOptions<any>): ReactElement<object> {
-  const { data, error, errors, loading } = useQuery(query, {
-    ...restOptions,
-    suspend: false,
-  });
+  const { data, error, errors, loading } = useQuery(query, restOptions);
 
   if (error) {
     throw error;
@@ -140,6 +137,9 @@ function TasksLoaderWithoutSuspense({
   }
   if (loading) {
     return <>Loading without suspense</>;
+  }
+  if (!data) {
+    return <>Skipped loading of data</>;
   }
   return <TaskList tasks={data.tasks} />;
 }
@@ -168,7 +168,7 @@ it('should work with suspense disabled', async () => {
   const client = createClient({ mocks: TASKS_MOCKS });
   const { container } = render(
     <ApolloProvider client={client}>
-      <TasksLoaderWithoutSuspense query={TASKS_QUERY} />
+      <ManagedTasksLoader suspend={false} query={TASKS_QUERY} />
     </ApolloProvider>
   );
   expect(container.textContent).toBe('Loading without suspense');
@@ -376,7 +376,7 @@ it('should ignore apollo errors by default in non-suspense mode', async () => {
   const client = createClient({ link: linkReturningError });
   const { container } = render(
     <ApolloProvider client={client}>
-      <TasksLoaderWithoutSuspense query={TASKS_QUERY} />
+      <ManagedTasksLoader suspend={false} query={TASKS_QUERY} />
     </ApolloProvider>
   );
   expect(container.textContent).toBe('Loading without suspense');
@@ -394,7 +394,8 @@ it('shouldn allow a query with non-standard fetch policy without suspense', asyn
   const client = createClient({ mocks: TASKS_MOCKS });
   const { container } = render(
     <ApolloProvider client={client}>
-      <TasksLoaderWithoutSuspense
+      <ManagedTasksLoader
+        suspend={false}
         fetchPolicy="cache-and-network"
         query={TASKS_QUERY}
       />
@@ -407,4 +408,110 @@ it('shouldn allow a query with non-standard fetch policy without suspense', asyn
   await waitForNextTick();
 
   expect(container.querySelectorAll('li')).toHaveLength(3);
+});
+
+it('skips suspended query', async () => {
+  const client = createClient({ mocks: TASKS_MOCKS });
+  const { container } = render(
+    <ApolloProvider client={client}>
+      <Suspense fallback={<div>Loading</div>}>
+        <ManagedTasksLoader skip={true} query={TASKS_QUERY} />
+      </Suspense>
+    </ApolloProvider>
+  );
+
+  expect(container.textContent).toBe('Skipped loading of data');
+
+  flushEffects();
+
+  await waitForNextTick();
+
+  expect(container.textContent).toBe('Skipped loading of data');
+});
+
+it('skips not suspended query', async () => {
+  const client = createClient({ mocks: TASKS_MOCKS });
+  const { container } = render(
+    <ApolloProvider client={client}>
+      <ManagedTasksLoader skip={true} suspend={false} query={TASKS_QUERY} />
+    </ApolloProvider>
+  );
+
+  expect(container.textContent).toBe('Skipped loading of data');
+
+  flushEffects();
+
+  await waitForNextTick();
+
+  expect(container.textContent).toBe('Skipped loading of data');
+});
+
+it('starts skipped suspended query', async () => {
+  const client = createClient({ mocks: TASKS_MOCKS });
+
+  const { container, rerender } = render(
+    <ApolloProvider client={client}>
+      <Suspense fallback={<div>Loading</div>}>
+        <ManagedTasksLoader skip={true} query={TASKS_QUERY} />
+      </Suspense>
+    </ApolloProvider>
+  );
+
+  expect(container.textContent).toBe('Skipped loading of data');
+
+  flushEffects();
+
+  await waitForNextTick();
+
+  expect(container.textContent).toBe('Skipped loading of data');
+
+  rerender(
+    <ApolloProvider client={client}>
+      <Suspense fallback={<div>Loading</div>}>
+        <ManagedTasksLoader skip={false} query={TASKS_QUERY} />
+      </Suspense>
+    </ApolloProvider>
+  );
+
+  expect(container.textContent).toBe('Loading');
+
+  flushEffects();
+
+  await waitForNextTick();
+
+  expect(container.querySelectorAll('li')).toHaveLength(3);
+  expect(container.querySelector('li')!.textContent).toBe('Learn GraphQL');
+});
+
+it('starts skipped not suspended query', async () => {
+  const client = createClient({ mocks: TASKS_MOCKS });
+
+  const { container, rerender } = render(
+    <ApolloProvider client={client}>
+      <ManagedTasksLoader skip={true} suspend={false} query={TASKS_QUERY} />
+    </ApolloProvider>
+  );
+
+  expect(container.textContent).toBe('Skipped loading of data');
+
+  flushEffects();
+
+  await waitForNextTick();
+
+  expect(container.textContent).toBe('Skipped loading of data');
+
+  rerender(
+    <ApolloProvider client={client}>
+      <ManagedTasksLoader skip={false} suspend={false} query={TASKS_QUERY} />
+    </ApolloProvider>
+  );
+
+  expect(container.textContent).toBe('Loading without suspense');
+
+  flushEffects();
+
+  await waitForNextTick();
+
+  expect(container.querySelectorAll('li')).toHaveLength(3);
+  expect(container.querySelector('li')!.textContent).toBe('Learn GraphQL');
 });

@@ -25,6 +25,7 @@ export interface QueryHookOptions<TVariables>
   notifyOnNetworkStatusChange?: boolean;
   pollInterval?: number;
   // custom options of `useQuery` hook
+  skip?: boolean;
   suspend?: boolean;
 }
 
@@ -47,7 +48,11 @@ export interface QueryHookResult<TData, TVariables>
 
 export function useQuery<TData = any, TVariables = OperationVariables>(
   query: DocumentNode,
-  { suspend = true, ...restOptions }: QueryHookOptions<TVariables> = {}
+  {
+    skip = false,
+    suspend = true,
+    ...restOptions
+  }: QueryHookOptions<TVariables> = {}
 ): QueryHookResult<TData, TVariables> {
   const client = useApolloClient();
   const [result, setResult] = useState<null | QueryHookState<TData>>(null);
@@ -59,6 +64,10 @@ export function useQuery<TData = any, TVariables = OperationVariables>(
 
   useEffect(
     () => {
+      if (skip) {
+        return;
+      }
+
       const subscription = observableQuery.current!.subscribe(nextResult => {
         setResult(nextResult);
       });
@@ -68,7 +77,7 @@ export function useQuery<TData = any, TVariables = OperationVariables>(
         subscription.unsubscribe();
       };
     },
-    [query, objToKey(restOptions)]
+    [skip, query, objToKey(restOptions)]
   );
 
   ensureSupportedFetchPolicy(suspend, restOptions.fetchPolicy);
@@ -92,6 +101,16 @@ export function useQuery<TData = any, TVariables = OperationVariables>(
     ) => observableQuery.current!.updateQuery(mapFn),
   };
 
+  if (skip) {
+    // Taken from https://github.com/apollographql/react-apollo/blob/5cb63b3625ce5e4a3d3e4ba132eaec2a38ef5d90/src/Query.tsx#L376-L381
+    return {
+      ...helpers,
+      data: undefined,
+      error: undefined,
+      loading: false,
+    };
+  }
+
   if (
     !(
       query === previousQuery.current &&
@@ -113,6 +132,12 @@ export function useQuery<TData = any, TVariables = OperationVariables>(
       throw watchedQuery.result();
     }
 
+    setResult(currentResult);
+    return { ...helpers, ...currentResult };
+  }
+
+  if (!result) {
+    const currentResult = observableQuery.current!.currentResult();
     setResult(currentResult);
     return { ...helpers, ...currentResult };
   }
