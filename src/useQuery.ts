@@ -16,6 +16,7 @@ import {
   FetchMoreOptions,
   UpdateQueryOptions,
   FetchPolicy,
+  ApolloCurrentResult,
 } from 'apollo-client';
 
 export interface QueryHookOptions<TVariables>
@@ -27,14 +28,17 @@ export interface QueryHookOptions<TVariables>
   suspend?: boolean;
 }
 
+export type QueryHookState<TData> = Pick<
+  ApolloCurrentResult<TData>,
+  'data' | 'error' | 'errors' | 'loading'
+>;
+
 export interface QueryHookResult<TData, TVariables>
-  extends ApolloQueryResult<TData>,
+  extends QueryHookState<TData>,
     Pick<
       ObservableQuery<TData, TVariables>,
       'refetch' | 'startPolling' | 'stopPolling' | 'updateQuery'
     > {
-  error?: Error;
-
   fetchMore<K extends keyof TVariables>(
     fetchMoreOptions: FetchMoreQueryOptions<TVariables, K> &
       FetchMoreOptions<TData, TVariables>
@@ -46,7 +50,7 @@ export function useQuery<TData = any, TVariables = OperationVariables>(
   { suspend = true, ...restOptions }: QueryHookOptions<TVariables> = {}
 ): QueryHookResult<TData, TVariables> {
   const client = useApolloClient();
-  const [result, setResult] = useState<null | ApolloQueryResult<TData>>(null);
+  const [result, setResult] = useState<null | QueryHookState<TData>>(null);
   const previousQuery = useRef<null | DocumentNode>(null);
   const previousRestOptions = useRef<null | QueryHookOptions<TVariables>>(null);
   const observableQuery = useRef<null | ObservableQuery<TData, TVariables>>(
@@ -109,9 +113,8 @@ export function useQuery<TData = any, TVariables = OperationVariables>(
       throw watchedQuery.result();
     }
 
-    // TODO: Normalize structure.
-    setResult(currentResult as ApolloQueryResult<TData>);
-    return { ...helpers, ...(currentResult as ApolloQueryResult<TData>) };
+    setResult(currentResult);
+    return { ...helpers, ...currentResult };
   }
 
   return { ...helpers, ...result! };
