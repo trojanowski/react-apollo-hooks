@@ -113,6 +113,7 @@
     "react-testing-library": "^5.3.1",
     "rimraf": "^2.6.2",
     "standard-version": "^4.4.0",
-    "typescript": "^3.2.2"
+    "typescript": "^3.2.2",
+    "typescript-eslint-parser": "^21.0.2"
   }
 }

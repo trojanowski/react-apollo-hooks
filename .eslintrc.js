@@ -1,4 +1,9 @@
 module.exports = {
+  parser: 'typescript-eslint-parser',
+  parserOptions: {
+    jsx: true,
+    useJSXTextNode: true,
+  },
   extends: ['react-app', 'prettier'],
   plugins: ['react-hooks'],
   rules: {
