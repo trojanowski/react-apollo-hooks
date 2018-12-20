@@ -1,4 +1,5 @@
 /es/*
 /lib/*
+/typings/*
 /node_modules/*
 !.babelrc.js

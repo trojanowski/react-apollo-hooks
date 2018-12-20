@@ -2,9 +2,12 @@
   "include": ["src/**/*.ts", "src/**/*.tsx"],
   "compilerOptions": {
     "jsx": "react",
-    "strict": true,
     "moduleResolution": "node",
     "allowSyntheticDefaultImports": true,
-    "lib": ["dom", "es2015", "esnext.asynciterable"]
+    "lib": ["dom", "es2015", "esnext.asynciterable"],
+
+    "strict": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true
   }
 }

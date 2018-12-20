@@ -18,8 +18,8 @@
     "typings-check": "tsc --noEmit",
     "format-check": "prettier --list-different \"**/*.{js,ts,tsx}\"",
     "format": "prettier --write \"**/*.{js,ts,tsx}\"",
-    "lint-ci": "eslint --max-warnings=0 .",
-    "lint": "eslint .",
+    "lint-ci": "eslint --ext ts --ext tsx --max-warnings=0 .",
+    "lint": "eslint --ext ts --ext tsx .",
     "prepublishOnly": "npm run build",
     "test": "jest"
   },
@@ -101,6 +101,7 @@
     "eslint-plugin-jsx-a11y": "6.x",
     "eslint-plugin-react": "7.x",
     "eslint-plugin-react-hooks": "^0.0.0",
+    "eslint-plugin-typescript": "^0.14.0",
     "graphql": "^14.0.2",
     "graphql-tag": "^2.10.0",
     "husky": "^1.2.0",
