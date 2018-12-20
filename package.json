@@ -14,7 +14,7 @@
     "build:cjs": "rimraf lib && babel src --extensions '.ts' --extensions '.tsx' --ignore '**/__tests__' --ignore '**/__testutils__' -d lib",
     "build:es": "rimraf es && cross-env ES_MODULES=true babel src --extensions '.ts' --extensions '.tsx' --ignore '**/__tests__' --ignore '**/__testutils__' -d es",
     "build:typings": "rimraf typings && tsc -p tsconfig.typings.json",
-    "build": "npm run build:cjs && npm run build:es && build:typings",
+    "build": "npm run build:cjs && npm run build:es && npm run build:typings",
     "typings-check": "tsc --noEmit",
     "format-check": "prettier --list-different \"**/*.{js,ts,tsx}\"",
     "format": "prettier --write \"**/*.{js,ts,tsx}\"",
