@@ -1,5 +1,5 @@
 import { DocumentNode } from 'graphql';
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import {
   invalidateCachedObservableQuery,
   getCachedObservableQuery,
@@ -46,15 +46,6 @@ export interface QueryHookResult<TData, TVariables>
     fetchMoreOptions: FetchMoreQueryOptions<TVariables, K> &
       FetchMoreOptions<TData, TVariables>
   ): Promise<ApolloQueryResult<TData>>;
-}
-
-function currentResultToState<TData>({
-  data,
-  error,
-  errors,
-  loading,
-}: ApolloCurrentResult<TData>): QueryHookState<TData> {
-  return { error, errors, loading, data: data as TData };
 }
 
 export function useQuery<TData = any, TVariables = OperationVariables>(
@@ -118,8 +109,17 @@ export function useQuery<TData = any, TVariables = OperationVariables>(
 
   const [responseId, setResponseId] = useState(0);
 
-  const currentResult = useMemo(
-    () => currentResultToState(observableQuery.currentResult()),
+  const currentResult = useMemo<QueryHookState<TData>>(
+    () => {
+      const { data, error, errors, loading } = observableQuery.currentResult();
+
+      return {
+        error,
+        errors,
+        loading,
+        data: data as TData,
+      };
+    },
     [skip, responseId, observableQuery]
   );
 
@@ -129,9 +129,10 @@ export function useQuery<TData = any, TVariables = OperationVariables>(
         return;
       }
 
-      const subscription = observableQuery.subscribe(() => {
-        setResponseId(x => x + 1);
-      });
+      const subscription = observableQuery.subscribe(
+        () => setResponseId(x => x + 1),
+        () => setResponseId(x => x + 1)
+      );
 
       invalidateCachedObservableQuery(client, watchQueryOptions);
 
@@ -141,6 +142,12 @@ export function useQuery<TData = any, TVariables = OperationVariables>(
     },
     [skip, observableQuery]
   );
+
+  const renderCount = useRef(0);
+
+  console.log('render: %d', (renderCount.current += 1));
+  console.log('variables: %j', variables);
+  console.log('currentResult: %j', currentResult);
 
   ensureSupportedFetchPolicy(suspend, fetchPolicy);
 
@@ -179,10 +186,7 @@ function ensureSupportedFetchPolicy(
   suspend: boolean,
   fetchPolicy?: FetchPolicy
 ) {
-  if (!suspend) {
-    return;
-  }
-  if (fetchPolicy && fetchPolicy !== 'cache-first') {
+  if (suspend && fetchPolicy && fetchPolicy !== 'cache-first') {
     throw new Error(
       `Fetch policy ${fetchPolicy} is not supported without 'suspend: false'`
     );

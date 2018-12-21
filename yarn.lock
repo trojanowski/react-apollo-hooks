@@ -3759,6 +3759,11 @@ jest-mock@^23.2.0:
   resolved "https://registry.yarnpkg.com/jest-mock/-/jest-mock-23.2.0.tgz#ad1c60f29e8719d47c26e1138098b6d18b261134"
   integrity sha1-rRxg8p6HGdR8JuETgJi20YsmETQ=
 
+jest-react-profiler@^0.1.3:
+  version "0.1.3"
+  resolved "https://registry.yarnpkg.com/jest-react-profiler/-/jest-react-profiler-0.1.3.tgz#7545829e4127b55a903d3132268719e075af7905"
+  integrity sha512-rLMhEEna+Rbg7ksaOx6xVY1zcxzIj1foZz4UezjaaSqO5b0sn/Fyu/sA0DLAXAMvz+qwPVbTeyiXKZr99WBfDg==
+
 jest-regex-util@^23.3.0:
   version "23.3.0"
   resolved "https://registry.yarnpkg.com/jest-regex-util/-/jest-regex-util-23.3.0.tgz#5f86729547c2785c4002ceaa8f849fe8ca471bc5"
