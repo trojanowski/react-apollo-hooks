@@ -7,20 +7,21 @@ export default function objToKey(obj: Record<string, any>): null | string {
   if (!obj) {
     return null;
   }
-  const keys = Object.keys(obj).sort();
 
-  const sortedObj = keys.reduce(
-    (result, key) => {
-      const value = obj[key];
-      if (isPlainObject(value)) {
-        result[key] = objToKey(obj[key]);
-      } else {
-        result[key] = obj[key];
-      }
-      return result;
-    },
-    {} as Record<string, any>
-  );
+  const sortedObj = Object.keys(obj)
+    .sort()
+    .reduce(
+      (result, key) => {
+        const value = obj[key];
+        if (isPlainObject(value)) {
+          result[key] = objToKey(obj[key]);
+        } else {
+          result[key] = obj[key];
+        }
+        return result;
+      },
+      {} as Record<string, any>
+    );
   return JSON.stringify(sortedObj);
 }
 

@@ -1,11 +1,10 @@
 import { DocumentNode } from 'graphql';
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import {
   invalidateCachedObservableQuery,
   getCachedObservableQuery,
 } from './queryCache';
-import objToKey, { Omit } from './Utils';
-import isEqual from 'react-fast-compare';
+import objToKey, { Omit, assertApolloClient } from './Utils';
 import { useApolloClient } from './ApolloContext';
 import {
   OperationVariables,
@@ -16,6 +15,7 @@ import {
   FetchMoreOptions,
   FetchPolicy,
   ApolloCurrentResult,
+  WatchQueryOptions,
 } from 'apollo-client';
 
 export interface QueryHookOptions<TVariables>
@@ -60,17 +60,67 @@ function currentResultToState<TData>({
 export function useQuery<TData = any, TVariables = OperationVariables>(
   query: DocumentNode,
   {
+    // Hook options
     skip = false,
     suspend = true,
-    ...restOptions
+
+    // Watch options
+    pollInterval,
+    notifyOnNetworkStatusChange,
+
+    // Apollo client options
+    context,
+    metadata,
+    variables,
+    fetchPolicy,
+    errorPolicy,
+    fetchResults,
   }: QueryHookOptions<TVariables> = {}
 ): QueryHookResult<TData, TVariables> {
-  const client = useApolloClient();
-  const [result, setResult] = useState<null | QueryHookState<TData>>(null);
-  const previousQuery = useRef<null | DocumentNode>(null);
-  const previousRestOptions = useRef<null | QueryHookOptions<TVariables>>(null);
-  const observableQuery = useRef<null | ObservableQuery<TData, TVariables>>(
-    null
+  const client = useApolloClient()!;
+
+  assertApolloClient(client);
+
+  const watchQueryOptions: WatchQueryOptions<TVariables> = useMemo(
+    () => ({
+      query,
+
+      pollInterval,
+      notifyOnNetworkStatusChange,
+
+      context,
+      metadata,
+      variables,
+      fetchPolicy,
+      errorPolicy,
+      fetchResults,
+    }),
+    [
+      query,
+
+      pollInterval,
+      notifyOnNetworkStatusChange,
+
+      context,
+      metadata,
+      variables && objToKey(variables),
+      fetchPolicy,
+      errorPolicy,
+      fetchResults,
+    ]
+  );
+
+  const observableQuery = useMemo(
+    () =>
+      getCachedObservableQuery<TData, TVariables>(client!, watchQueryOptions),
+    [client, watchQueryOptions]
+  );
+
+  const [responseId, setResponseId] = useState(0);
+
+  const currentResult = useMemo(
+    () => currentResultToState(observableQuery.currentResult()),
+    [skip, responseId, observableQuery]
   );
 
   useEffect(
@@ -79,48 +129,27 @@ export function useQuery<TData = any, TVariables = OperationVariables>(
         return;
       }
 
-      const subscription = observableQuery.current!.subscribe(nextResult => {
-        setResult(nextResult);
+      const subscription = observableQuery.subscribe(() => {
+        setResponseId(x => x + 1);
       });
-      invalidateCachedObservableQuery(client!, query, restOptions);
+
+      invalidateCachedObservableQuery(client, watchQueryOptions);
 
       return () => {
         subscription.unsubscribe();
       };
     },
-    [skip, query, objToKey(restOptions)]
+    [skip, observableQuery]
   );
 
-  ensureSupportedFetchPolicy(suspend, restOptions.fetchPolicy);
-
-  const shouldUpdateQuery = !(
-    query === previousQuery.current &&
-    isEqual(restOptions, previousRestOptions.current)
-  );
-
-  // TODO: Refactor with useMemo.
-  if (shouldUpdateQuery) {
-    previousQuery.current = query;
-    previousRestOptions.current = restOptions;
-    observableQuery.current = getCachedObservableQuery<TData, TVariables>(
-      client!,
-      query,
-      restOptions
-    );
-  }
+  ensureSupportedFetchPolicy(suspend, fetchPolicy);
 
   const helpers = {
-    fetchMore: observableQuery.current!.fetchMore.bind(observableQuery.current),
-    refetch: observableQuery.current!.refetch.bind(observableQuery.current),
-    startPolling: observableQuery.current!.startPolling.bind(
-      observableQuery.current
-    ),
-    stopPolling: observableQuery.current!.stopPolling.bind(
-      observableQuery.current
-    ),
-    updateQuery: observableQuery.current!.updateQuery.bind(
-      observableQuery.current
-    ),
+    fetchMore: observableQuery.fetchMore.bind(observableQuery),
+    refetch: observableQuery.refetch.bind(observableQuery),
+    startPolling: observableQuery.startPolling.bind(observableQuery),
+    stopPolling: observableQuery.stopPolling.bind(observableQuery),
+    updateQuery: observableQuery.updateQuery.bind(observableQuery),
   };
 
   if (skip) {
@@ -134,36 +163,16 @@ export function useQuery<TData = any, TVariables = OperationVariables>(
   }
 
   if (suspend) {
-    const currentResult = observableQuery.current!.currentResult();
+    const current = observableQuery.currentResult();
 
-    if (currentResult.partial) {
+    if (current.partial) {
       // throw a promise - use the react suspense to wait until the data is
       // available
-      throw observableQuery.current!.result();
+      throw observableQuery.result();
     }
   }
 
-  if (shouldUpdateQuery) {
-    const nextState = currentResultToState(
-      observableQuery.current!.currentResult()
-    );
-
-    setResult(nextState);
-
-    return { ...helpers, ...nextState };
-  }
-
-  if (!result) {
-    const nextState = currentResultToState(
-      observableQuery.current!.currentResult()
-    );
-
-    setResult(nextState);
-
-    return { ...helpers, ...nextState };
-  }
-
-  return { ...helpers, ...result! };
+  return { ...helpers, ...currentResult };
 }
 
 function ensureSupportedFetchPolicy(

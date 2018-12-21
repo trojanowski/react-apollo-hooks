@@ -72,8 +72,7 @@
     "react": "^16.7.0-alpha.2"
   },
   "dependencies": {
-    "lodash": "^4.17.11",
-    "react-fast-compare": "^2.0.2"
+    "lodash": "^4.17.11"
   },
   "devDependencies": {
     "@babel/cli": "^7.1.2",

@@ -171,9 +171,11 @@ it('should work with suspense disabled', async () => {
       <ManagedTasksLoader suspend={false} query={TASKS_QUERY} />
     </ApolloProvider>
   );
+
   expect(container.textContent).toBe('Loading without suspense');
 
   flushEffects();
+
   await waitForNextTick();
 
   expect(container.querySelectorAll('li')).toHaveLength(3);
