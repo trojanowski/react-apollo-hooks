@@ -1,5 +1,5 @@
 import { DocumentNode } from 'graphql';
-import { useState, useEffect, useMemo, useRef } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import {
   invalidateCachedObservableQuery,
   getCachedObservableQuery,
@@ -142,12 +142,6 @@ export function useQuery<TData = any, TVariables = OperationVariables>(
     },
     [skip, observableQuery]
   );
-
-  const renderCount = useRef(0);
-
-  console.log('render: %d', (renderCount.current += 1));
-  console.log('variables: %j', variables);
-  console.log('currentResult: %j', currentResult);
 
   ensureSupportedFetchPolicy(suspend, fetchPolicy);
 
