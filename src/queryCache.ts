@@ -1,10 +1,19 @@
 import { print } from 'graphql/language/printer';
 
+import ApolloClient, { ObservableQuery } from 'apollo-client';
+import { DocumentNode } from 'graphql';
 import objToKey from './objToKey';
 
-const cachedQueriesByClient = new WeakMap();
+const cachedQueriesByClient = new WeakMap<
+  ApolloClient<any>,
+  Map<any, ObservableQuery<any, any>>
+>();
 
-export function getCachedObservableQuery(client, query, options) {
+export function getCachedObservableQuery<TData, TVariables>(
+  client: ApolloClient<any>,
+  query: DocumentNode,
+  options: Record<string, any>
+): ObservableQuery<TData, TVariables> {
   const queriesForClient = getCachedQueriesForClient(client);
   const cacheKey = getCacheKey(query, options);
   let observableQuery = queriesForClient.get(cacheKey);
@@ -15,13 +24,17 @@ export function getCachedObservableQuery(client, query, options) {
   return observableQuery;
 }
 
-export function invalidateCachedObservableQuery(client, query, options) {
+export function invalidateCachedObservableQuery(
+  client: ApolloClient<any>,
+  query: DocumentNode,
+  options: Record<string, any>
+): void {
   const queriesForClient = getCachedQueriesForClient(client);
   const cacheKey = getCacheKey(query, options);
   queriesForClient.delete(cacheKey);
 }
 
-function getCachedQueriesForClient(client) {
+function getCachedQueriesForClient(client: ApolloClient<any>) {
   let queriesForClient = cachedQueriesByClient.get(client);
   if (queriesForClient == null) {
     queriesForClient = new Map();
@@ -30,6 +43,9 @@ function getCachedQueriesForClient(client) {
   return queriesForClient;
 }
 
-function getCacheKey(query, options) {
+function getCacheKey(
+  query: DocumentNode,
+  options: Record<string, any>
+): string {
   return `${print(query)}@@${objToKey(options)}`;
 }
