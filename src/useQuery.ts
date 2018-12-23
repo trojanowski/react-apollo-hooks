@@ -1,5 +1,5 @@
 import { DocumentNode } from 'graphql';
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useContext } from 'react';
 import {
   invalidateCachedObservableQuery,
   getCachedObservableQuery,
@@ -17,6 +17,7 @@ import {
   ApolloCurrentResult,
   WatchQueryOptions,
 } from 'apollo-client';
+import { SSRContext } from './internal/SSRContext';
 
 export interface QueryHookOptions<TVariables>
   extends Omit<QueryOptions<TVariables>, 'query'> {
@@ -24,6 +25,7 @@ export interface QueryHookOptions<TVariables>
   notifyOnNetworkStatusChange?: boolean;
   pollInterval?: number;
   // custom options of `useQuery` hook
+  ssr?: boolean;
   skip?: boolean;
   suspend?: boolean;
 }
@@ -31,7 +33,7 @@ export interface QueryHookOptions<TVariables>
 export interface QueryHookState<TData>
   extends Pick<
     ApolloCurrentResult<undefined | TData>,
-    'error' | 'errors' | 'loading'
+    'error' | 'errors' | 'loading' | 'partial'
   > {
   data?: TData;
 }
@@ -52,6 +54,7 @@ export function useQuery<TData = any, TVariables = OperationVariables>(
   query: DocumentNode,
   {
     // Hook options
+    ssr = true,
     skip = false,
     suspend = true,
 
@@ -72,6 +75,7 @@ export function useQuery<TData = any, TVariables = OperationVariables>(
 
   assertApolloClient(client);
 
+  const ssrManager = useContext(SSRContext);
   const watchQueryOptions: WatchQueryOptions<TVariables> = useMemo(
     () => ({
       query,
@@ -82,7 +86,11 @@ export function useQuery<TData = any, TVariables = OperationVariables>(
       context,
       metadata,
       variables,
-      fetchPolicy,
+      fetchPolicy:
+        ssrManager == null ||
+        (fetchPolicy !== 'network-only' && fetchPolicy !== 'cache-and-network')
+          ? fetchPolicy
+          : 'cache-first',
       errorPolicy,
       fetchResults,
     }),
@@ -103,7 +111,7 @@ export function useQuery<TData = any, TVariables = OperationVariables>(
 
   const observableQuery = useMemo(
     () =>
-      getCachedObservableQuery<TData, TVariables>(client!, watchQueryOptions),
+      getCachedObservableQuery<TData, TVariables>(client, watchQueryOptions),
     [client, watchQueryOptions]
   );
 
@@ -111,12 +119,19 @@ export function useQuery<TData = any, TVariables = OperationVariables>(
 
   const currentResult = useMemo<QueryHookState<TData>>(
     () => {
-      const { data, error, errors, loading } = observableQuery.currentResult();
+      const {
+        data,
+        error,
+        errors,
+        loading,
+        partial,
+      } = observableQuery.currentResult();
 
       return {
         error,
         errors,
         loading,
+        partial,
         data: data as TData,
       };
     },
@@ -153,7 +168,7 @@ export function useQuery<TData = any, TVariables = OperationVariables>(
     updateQuery: observableQuery.updateQuery.bind(observableQuery),
   };
 
-  if (skip) {
+  if (skip || (!ssr && ssrManager != null)) {
     // Taken from https://github.com/apollographql/react-apollo/blob/5cb63b3625ce5e4a3d3e4ba132eaec2a38ef5d90/src/Query.tsx#L376-L381
     return {
       ...helpers,
@@ -163,13 +178,15 @@ export function useQuery<TData = any, TVariables = OperationVariables>(
     };
   }
 
-  if (suspend) {
-    const current = observableQuery.currentResult();
-
-    if (current.partial) {
+  if (currentResult.partial) {
+    if (suspend) {
       // throw a promise - use the react suspense to wait until the data is
       // available
       throw observableQuery.result();
+    }
+
+    if (ssr && ssrManager) {
+      ssrManager.register(observableQuery.result());
     }
   }
 
