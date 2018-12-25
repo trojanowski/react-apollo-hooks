@@ -6,6 +6,7 @@ import {
   MutationOptions,
   ObservableQuery,
   OperationVariables,
+  SubscribeToMoreOptions,
   QueryOptions,
 } from 'apollo-client';
 import { DataProxy } from 'apollo-cache';
@@ -39,6 +40,13 @@ type QueryHookOptions<TVariables> = Omit<QueryOptions<TVariables>, 'query'> & {
   suspend?: boolean;
 };
 
+type SubscribeToMoreHookOptions = Omit<
+  SubscribeToMoreOptions<TData, TVariables, TSubscriptionData>,
+  'updateQuery'
+> & {
+  updateQuery: UpdateQueryFn<TData, TVariables, TSubscriptionData>;
+};
+
 export function useQuery<TData = any, TVariables = OperationVariables>(
   query: DocumentNode,
   options?: QueryHookOptions<TVariables>
@@ -51,6 +59,9 @@ export function useQuery<TData = any, TVariables = OperationVariables>(
       fetchMoreOptions: FetchMoreQueryOptions<TVariables, K> &
         FetchMoreOptions<TData, TVariables>
     ): Promise<ApolloQueryResult<TData>>;
+    subscribeToMore<TSubscriptionData = TData>(
+      options: SubscribeToMoreHookOptions<TData, TVariables, TSubscriptionData>
+    );
   };
 
 // We have to redefine MutationUpdaterFn and `update` option of `useMutation`

@@ -24,7 +24,10 @@ export function useQuery(query, { suspend = true, ...restOptions } = {}) {
   const [result, setResult] = useState();
   const previousQuery = useRef();
   const previousRestOptions = useRef();
+  const previousSubscription = useRef();
+  const previousSubscribtionOptions = useRef();
   const observableQuery = useRef();
+  const unsubscribeToMore = useRef();
 
   useEffect(
     () => {
@@ -35,6 +38,10 @@ export function useQuery(query, { suspend = true, ...restOptions } = {}) {
 
       return () => {
         subscription.unsubscribe();
+
+        if (unsubscribeToMore.current) {
+          unsubscribeToMore.current();
+        }
       };
     },
     [query, objToKey(restOptions)]
@@ -47,6 +54,17 @@ export function useQuery(query, { suspend = true, ...restOptions } = {}) {
     refetch: variables => observableQuery.current.refetch(variables),
     startPolling: interval => observableQuery.current.startPolling(interval),
     stopPolling: () => observableQuery.current.stopPolling(),
+    subscribeToMore: opts => {
+      const { document, variables } = opts;
+      if (
+        document !== previousSubscription.current ||
+        isEqual(variables, previousSubscribtionOptions.current)
+      ) {
+        unsubscribeToMore.current = observableQuery.current.subscribeToMore(
+          opts
+        );
+      }
+    },
     updateQuery: updaterFn => observableQuery.current.updateQuery(updaterFn),
   };
 
