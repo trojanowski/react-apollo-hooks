@@ -58,7 +58,7 @@ export function useQuery(query, { suspend = true, ...restOptions } = {}) {
       const { document, variables } = opts;
       if (
         document !== previousSubscription.current ||
-        isEqual(variables, previousSubscribtionOptions.current)
+        !(isEqual(variables, previousSubscribtionOptions.current))
       ) {
         unsubscribeToMore.current = observableQuery.current.subscribeToMore(
           opts
