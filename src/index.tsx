@@ -22,24 +22,26 @@ import React, {
   useState,
 } from 'react';
 import isEqual from 'react-fast-compare';
-import { Omit, assertApolloClient } from './Utils';
 import objToKey from './objToKey';
 import {
   getCachedObservableQuery,
   invalidateCachedObservableQuery,
 } from './queryCache';
+import { Omit, assertApolloClient } from './utils';
 
 const ApolloContext = React.createContext<null | ApolloClient<any>>(null);
 
-export interface ApolloProviderProps {
+export interface ApolloProviderProps<TCacheShape> {
   readonly children?: ReactNode;
-  readonly client: ApolloClient<any>;
+  readonly client: ApolloClient<TCacheShape>;
 }
 
-export function ApolloProvider({
+export function ApolloProvider<TCacheShape = any>({
   client,
   children,
-}: ApolloProviderProps): ReactElement<ApolloProviderProps> {
+}: ApolloProviderProps<TCacheShape>): ReactElement<
+  ApolloProviderProps<TCacheShape>
+> {
   return (
     <ApolloContext.Provider value={client}>{children}</ApolloContext.Provider>
   );
@@ -108,7 +110,6 @@ export function useQuery<TData = any, TVariables = OperationVariables>(
 
   ensureSupportedFetchPolicy(suspend, restOptions.fetchPolicy);
 
-  // TODO: https://github.com/apollographql/react-apollo/blob/5cb63b3625ce5e4a3d3e4ba132eaec2a38ef5d90/src/Query.tsx#L54-L59
   const helpers = {
     fetchMore: <K extends keyof TVariables>(
       fetchMoreOptions: FetchMoreQueryOptions<TVariables, K> &

@@ -10,7 +10,7 @@ import {
 import { ApolloProvider, useMutation, useQuery } from '..';
 import createClient from '../__testutils__/createClient';
 import { SAMPLE_TASKS } from '../__testutils__/data';
-import { noop } from '../__testutils__/noop';
+import noop from '../__testutils__/noop';
 import waitForNextTick from '../__testutils__/waitForNextTick';
 
 const TASKS_MOCKS = [

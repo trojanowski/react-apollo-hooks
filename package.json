@@ -4,22 +4,21 @@
   "description": "",
   "main": "lib/index.js",
   "module": "es/index.js",
-  "typings": "typings/index.d.ts",
+  "typings": "lib/index.d.ts",
   "files": [
     "es",
-    "lib",
-    "typings/**"
+    "lib"
   ],
   "scripts": {
     "build:cjs": "rimraf lib && babel src --extensions '.ts' --extensions '.tsx' --ignore '**/__tests__' --ignore '**/__testutils__' -d lib",
     "build:es": "rimraf es && cross-env ES_MODULES=true babel src --extensions '.ts' --extensions '.tsx' --ignore '**/__tests__' --ignore '**/__testutils__' -d es",
-    "build:typings": "rimraf typings && tsc -p tsconfig.typings.json",
-    "build": "yarn build:cjs && yarn build:es && yarn build:typings",
+    "build:typings": "tsc -p tsconfig.typings.json",
+    "build": "npm run build:cjs && npm run build:es && npm run build:typings",
     "typings-check": "tsc --noEmit",
     "format-check": "prettier --list-different \"**/*.{js,ts,tsx}\"",
     "format": "prettier --write \"**/*.{js,ts,tsx}\"",
-    "lint": "tslint \"src/**/*.{ts,tsx}\"",
-    "prepublishOnly": "yarn build",
+    "lint": "tslint --project . \"src/**/*.{ts,tsx}\"",
+    "prepublishOnly": "npm run build",
     "test": "jest"
   },
   "author": "Daniel Trojanowski",
@@ -62,7 +61,7 @@
       "git add"
     ],
     "**/*.{ts,tsx}": [
-      "tslint --fix",
+      "tslint --fix --project .",
       "prettier --write",
       "git add"
     ]
