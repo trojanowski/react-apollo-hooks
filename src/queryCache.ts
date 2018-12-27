@@ -1,7 +1,7 @@
-import { print } from 'graphql/language/printer';
-
 import ApolloClient, { ObservableQuery } from 'apollo-client';
 import { DocumentNode } from 'graphql';
+import { print } from 'graphql/language/printer';
+
 import objToKey from './objToKey';
 
 const cachedQueriesByClient = new WeakMap<

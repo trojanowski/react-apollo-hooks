@@ -22,6 +22,7 @@ import React, {
   useState,
 } from 'react';
 import isEqual from 'react-fast-compare';
+
 import objToKey from './objToKey';
 import {
   getCachedObservableQuery,
