@@ -4,7 +4,7 @@ import ApolloClient, {
   ObservableQuery,
   WatchQueryOptions,
 } from 'apollo-client';
-import objToKey from './Utils';
+import { objToKey } from './utils';
 
 const cachedQueriesByClient = new WeakMap<
   ApolloClient<any>,

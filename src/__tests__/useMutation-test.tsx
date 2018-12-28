@@ -2,13 +2,11 @@ import gql from 'graphql-tag';
 import React, { Suspense } from 'react';
 import { cleanup, fireEvent, render } from 'react-testing-library';
 
-import { ApolloProvider } from '../ApolloContext';
+import { ApolloProvider, useMutation, useQuery } from '..';
 import createClient from '../__testutils__/createClient';
 import { SAMPLE_TASKS } from '../__testutils__/data';
 import flushEffectsAndWait from '../__testutils__/flushEffectsAndWait';
 import noop from '../__testutils__/noop';
-import { useMutation } from '../useMutation';
-import { useQuery } from '../useQuery';
 
 const TASKS_MOCKS = [
   {

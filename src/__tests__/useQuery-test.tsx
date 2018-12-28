@@ -5,12 +5,11 @@ import { withProfiler } from 'jest-react-profiler';
 import React, { Fragment, Suspense } from 'react';
 import { cleanup, render } from 'react-testing-library';
 
-import { ApolloProvider } from '../ApolloContext';
+import { ApolloProvider, QueryHookOptions, useQuery } from '..';
 import createClient from '../__testutils__/createClient';
 import { SAMPLE_TASKS } from '../__testutils__/data';
 import flushEffectsAndWait from '../__testutils__/flushEffectsAndWait';
 import noop from '../__testutils__/noop';
-import { QueryHookOptions, useQuery } from '../useQuery';
 
 const TASKS_MOCKS = [
   {

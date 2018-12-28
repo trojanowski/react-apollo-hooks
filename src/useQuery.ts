@@ -16,7 +16,7 @@ import {
   getCachedObservableQuery,
   invalidateCachedObservableQuery,
 } from './queryCache';
-import objToKey, { Omit } from './utils';
+import { Omit, objToKey } from './utils';
 
 export interface QueryHookOptions<TVariables>
   extends Omit<QueryOptions<TVariables>, 'query'> {
