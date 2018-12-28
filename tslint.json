@@ -1,0 +1,44 @@
+{
+  "defaultSeverity": "error",
+  "extends": ["tslint:latest", "tslint-react", "tslint-config-prettier"],
+  "jsRules": {},
+  "rules": {
+    "interface-name": false,
+    "interface-over-type-literal": false,
+    "jsx-boolean-value": [true, "never"],
+    "jsx-no-lambda": false,
+    "max-classes-per-file": false,
+    "member-access": false,
+    "no-implicit-dependencies": [
+      true,
+      [
+        "jest-dom",
+        "jest-react-profiler",
+        "graphql-tag",
+        "apollo-link",
+        "apollo-cache",
+        "apollo-link-mock",
+        "apollo-cache-inmemory",
+        "react-testing-library"
+      ]
+    ],
+    "no-submodule-imports": false,
+    "no-this-assignment": [
+      true,
+      {
+        "allow-destructuring": true
+      }
+    ],
+    "no-unused-expression": [true, "allow-fast-null-checks"],
+    "only-arrow-functions": false,
+    "ordered-imports": [
+      true,
+      {
+        "import-sources-order": "lowercase-last",
+        "named-imports-order": "lowercase-last"
+      }
+    ],
+    "prefer-template": true
+  },
+  "rulesDirectory": []
+}

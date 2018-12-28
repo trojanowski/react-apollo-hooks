@@ -1,22 +1,22 @@
-import { DocumentNode } from 'graphql';
-import { useState, useEffect, useMemo } from 'react';
 import {
-  invalidateCachedObservableQuery,
-  getCachedObservableQuery,
-} from './queryCache';
-import objToKey, { Omit, assertApolloClient } from './Utils';
-import { useApolloClient } from './ApolloContext';
-import {
+  ApolloCurrentResult,
+  ApolloQueryResult,
+  FetchMoreOptions,
+  FetchMoreQueryOptions,
+  FetchPolicy,
+  ObservableQuery,
   OperationVariables,
   QueryOptions,
-  ObservableQuery,
-  ApolloQueryResult,
-  FetchMoreQueryOptions,
-  FetchMoreOptions,
-  FetchPolicy,
-  ApolloCurrentResult,
   WatchQueryOptions,
 } from 'apollo-client';
+import { DocumentNode } from 'graphql';
+import { useEffect, useMemo, useState } from 'react';
+import { useApolloClient } from './ApolloContext';
+import {
+  getCachedObservableQuery,
+  invalidateCachedObservableQuery,
+} from './queryCache';
+import { Omit, objToKey } from './utils';
 
 export interface QueryHookOptions<TVariables>
   extends Omit<QueryOptions<TVariables>, 'query'> {
@@ -31,7 +31,7 @@ export interface QueryHookOptions<TVariables>
 export interface QueryHookState<TData>
   extends Pick<
     ApolloCurrentResult<undefined | TData>,
-    'error' | 'errors' | 'loading'
+    'error' | 'errors' | 'loading' | 'partial'
   > {
   data?: TData;
 }
@@ -70,21 +70,17 @@ export function useQuery<TData = any, TVariables = OperationVariables>(
 ): QueryHookResult<TData, TVariables> {
   const client = useApolloClient()!;
 
-  assertApolloClient(client);
-
   const watchQueryOptions: WatchQueryOptions<TVariables> = useMemo(
     () => ({
-      query,
-
-      pollInterval,
-      notifyOnNetworkStatusChange,
-
       context,
-      metadata,
-      variables,
-      fetchPolicy,
       errorPolicy,
+      fetchPolicy,
       fetchResults,
+      metadata,
+      notifyOnNetworkStatusChange,
+      pollInterval,
+      query,
+      variables,
     }),
     [
       query,
@@ -111,13 +107,14 @@ export function useQuery<TData = any, TVariables = OperationVariables>(
 
   const currentResult = useMemo<QueryHookState<TData>>(
     () => {
-      const { data, error, errors, loading } = observableQuery.currentResult();
+      const result = observableQuery.currentResult();
 
       return {
-        error,
-        errors,
-        loading,
-        data: data as TData,
+        data: result.data as TData,
+        error: result.error,
+        errors: result.errors,
+        loading: result.loading,
+        partial: result.partial,
       };
     },
     [skip, responseId, observableQuery]
@@ -163,14 +160,10 @@ export function useQuery<TData = any, TVariables = OperationVariables>(
     };
   }
 
-  if (suspend) {
-    const current = observableQuery.currentResult();
-
-    if (current.partial) {
-      // throw a promise - use the react suspense to wait until the data is
-      // available
-      throw observableQuery.result();
-    }
+  if (suspend && currentResult.partial) {
+    // throw a promise - use the react suspense to wait until the data is
+    // available
+    throw observableQuery.result();
   }
 
   return { ...helpers, ...currentResult };

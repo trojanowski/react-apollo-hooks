@@ -1,3 +1,5 @@
+/* tslint:disable:no-namespace */
+
 declare module 'jest-react-profiler' {
   import { ComponentType } from 'react';
 
