@@ -2,7 +2,7 @@ import { ApolloClient } from 'apollo-client';
 import { ApolloLink, DocumentNode, Observable } from 'apollo-link';
 import gql from 'graphql-tag';
 import { withProfiler } from 'jest-react-profiler';
-import React, { Fragment, Suspense } from 'react';
+import React, { Fragment, Suspense, SuspenseProps } from 'react';
 import { cleanup, render } from 'react-testing-library';
 
 import { ApolloProvider, QueryHookOptions, useQuery } from '..';
@@ -160,12 +160,16 @@ interface TasksWrapperProps extends TasksProps {
   client: ApolloClient<object>;
 }
 
+const SuspenseCompat = ({ children }: SuspenseProps) => <>{children}</>;
+
 function TasksWrapper({ client, ...props }: TasksWrapperProps) {
+  const SuspenseComponent = props.suspend !== false ? Suspense : SuspenseCompat;
+
   return (
     <ApolloProvider client={client}>
-      <Suspense fallback={<>Loading</>}>
+      <SuspenseComponent fallback={<>Loading</>}>
         <Tasks {...props} />
-      </Suspense>
+      </SuspenseComponent>
     </ApolloProvider>
   );
 }
