@@ -1,67 +1,31 @@
-import { DataProxy } from 'apollo-cache';
-import ApolloClient, {
+import {
   ApolloCurrentResult,
   ApolloQueryResult,
   FetchMoreOptions,
   FetchMoreQueryOptions,
   FetchPolicy,
-  MutationOptions,
   ObservableQuery,
   OperationVariables,
   QueryOptions,
   UpdateQueryOptions,
 } from 'apollo-client';
-import { FetchResult } from 'apollo-link';
 import { DocumentNode } from 'graphql';
-import React, {
-  ReactElement,
-  ReactNode,
-  useContext,
-  useEffect,
-  useRef,
-  useState,
-} from 'react';
+import { useEffect, useRef, useState } from 'react';
 import isEqual from 'react-fast-compare';
 
-import objToKey from './objToKey';
+import { useApolloClient } from './ApolloContext';
 import {
   getCachedObservableQuery,
   invalidateCachedObservableQuery,
 } from './queryCache';
+import { Omit, objToKey } from './utils';
 
-type Omit<T, K extends keyof T> = Pick<T, Exclude<keyof T, K>>;
-
-const ApolloContext = React.createContext<null | ApolloClient<any>>(null);
-
-export interface ApolloProviderProps<TCacheShape> {
-  readonly children?: ReactNode;
-  readonly client: ApolloClient<TCacheShape>;
-}
-
-export function ApolloProvider<TCacheShape = any>({
-  client,
-  children,
-}: ApolloProviderProps<TCacheShape>): ReactElement<
-  ApolloProviderProps<TCacheShape>
-> {
-  return (
-    <ApolloContext.Provider value={client}>{children}</ApolloContext.Provider>
-  );
-}
-
-export function useApolloClient<TCache = object>(): ApolloClient<TCache> {
-  const client = useContext(ApolloContext);
-
-  if (!client) {
-    // https://github.com/apollographql/react-apollo/blob/5cb63b3625ce5e4a3d3e4ba132eaec2a38ef5d90/src/component-utils.tsx#L19-L22
-    throw new Error(
-      'Could not find "client" in the context or passed in as a prop. ' +
-        'Wrap the root component in an <ApolloProvider>, or pass an ' +
-        'ApolloClient instance in via props.'
-    );
-  }
-
-  return client;
+export interface QueryHookState<TData>
+  extends Pick<
+    ApolloCurrentResult<undefined | TData>,
+    'error' | 'errors' | 'loading'
+  > {
+  data?: TData;
 }
 
 export interface QueryHookOptions<TVariables>
@@ -71,14 +35,6 @@ export interface QueryHookOptions<TVariables>
   pollInterval?: number;
   // custom options of `useQuery` hook
   suspend?: boolean;
-}
-
-export interface QueryHookState<TData>
-  extends Pick<
-    ApolloCurrentResult<undefined | TData>,
-    'error' | 'errors' | 'loading'
-  > {
-  data?: TData;
 }
 
 export interface QueryHookResult<TData, TVariables>
@@ -180,33 +136,6 @@ export function useQuery<TData = any, TVariables = OperationVariables>(
   }
 
   return { ...helpers, ...result! };
-}
-
-// We have to redefine MutationUpdaterFn and `update` option of `useMutation`
-// hook because we want them to use our custom parametrized version
-// of `FetchResult` type. Please look at
-// https://github.com/trojanowski/react-apollo-hooks/issues/25
-export type MutationUpdaterFn<TData = Record<string, any>> = (
-  proxy: DataProxy,
-  mutationResult: FetchResult<TData>
-) => void;
-
-export interface MutationHookOptions<TData, TVariables>
-  extends Omit<MutationOptions<TData, TVariables>, 'mutation' | 'update'> {
-  update?: MutationUpdaterFn<TData>;
-}
-
-export type MutationFn<TData, TVariables> = (
-  options?: MutationHookOptions<TData, TVariables>
-) => Promise<FetchResult<TData>>;
-
-export function useMutation<TData, TVariables = OperationVariables>(
-  mutation: DocumentNode,
-  baseOptions?: MutationHookOptions<TData, TVariables>
-): MutationFn<TData, TVariables> {
-  const client = useApolloClient();
-
-  return options => client.mutate({ mutation, ...baseOptions, ...options });
 }
 
 function ensureSupportedFetchPolicy(
