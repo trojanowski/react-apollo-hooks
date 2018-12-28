@@ -66,7 +66,7 @@ export function useQuery<TData = any, TVariables = OperationVariables>(
     fetchResults,
   }: QueryHookOptions<TVariables> = {}
 ): QueryHookResult<TData, TVariables> {
-  const client = useApolloClient()!;
+  const client = useApolloClient();
 
   const watchQueryOptions: WatchQueryOptions<TVariables> = useMemo(
     () => ({
@@ -97,7 +97,7 @@ export function useQuery<TData = any, TVariables = OperationVariables>(
 
   const observableQuery = useMemo(
     () =>
-      getCachedObservableQuery<TData, TVariables>(client!, watchQueryOptions),
+      getCachedObservableQuery<TData, TVariables>(client, watchQueryOptions),
     [client, watchQueryOptions]
   );
 
