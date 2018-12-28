@@ -48,14 +48,12 @@ export function ApolloProvider<TCacheShape = any>({
   );
 }
 
-export function useApolloClient<TCache = object>(): null | ApolloClient<
-  TCache
-> {
+export function useApolloClient<TCache = object>(): ApolloClient<TCache> {
   const client = useContext(ApolloContext);
 
   assertApolloClient(client);
 
-  return client;
+  return client!;
 }
 
 export interface QueryHookOptions<TVariables>
@@ -104,7 +102,7 @@ export function useQuery<TData = any, TVariables = OperationVariables>(
       const subscription = observableQuery.current!.subscribe(nextResult => {
         setResult(nextResult);
       });
-      invalidateCachedObservableQuery(client!, query, restOptions);
+      invalidateCachedObservableQuery(client, query, restOptions);
 
       return () => {
         subscription.unsubscribe();
@@ -142,7 +140,7 @@ export function useQuery<TData = any, TVariables = OperationVariables>(
     previousQuery.current = query;
     previousRestOptions.current = restOptions;
     const watchedQuery = getCachedObservableQuery<TData, TVariables>(
-      client!,
+      client,
       query,
       restOptions
     );
@@ -200,7 +198,7 @@ export function useMutation<TData, TVariables = OperationVariables>(
 ): MutationFn<TData, TVariables> {
   const client = useApolloClient();
 
-  return options => client!.mutate({ mutation, ...baseOptions, ...options });
+  return options => client.mutate({ mutation, ...baseOptions, ...options });
 }
 
 function ensureSupportedFetchPolicy(
