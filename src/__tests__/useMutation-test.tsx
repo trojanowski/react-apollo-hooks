@@ -7,13 +7,11 @@ import {
   render,
 } from 'react-testing-library';
 
-import { ApolloProvider } from '../ApolloContext';
+import { ApolloProvider, useMutation, useQuery } from '..';
 import createClient from '../__testutils__/createClient';
 import { SAMPLE_TASKS } from '../__testutils__/data';
 import noop from '../__testutils__/noop';
 import waitForNextTick from '../__testutils__/waitForNextTick';
-import { useMutation } from '../useMutation';
-import { useQuery } from '../useQuery';
 
 const TASKS_MOCKS = [
   {
