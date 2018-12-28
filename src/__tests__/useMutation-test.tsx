@@ -1,17 +1,12 @@
 import gql from 'graphql-tag';
 import React, { Suspense } from 'react';
-import {
-  cleanup,
-  fireEvent,
-  flushEffects,
-  render,
-} from 'react-testing-library';
+import { cleanup, fireEvent, render } from 'react-testing-library';
 
 import { ApolloProvider } from '../ApolloContext';
 import createClient from '../__testutils__/createClient';
 import { SAMPLE_TASKS } from '../__testutils__/data';
+import flushEffectsAndWait from '../__testutils__/flushEffectsAndWait';
 import noop from '../__testutils__/noop';
-import waitForNextTick from '../__testutils__/waitForNextTick';
 import { useMutation } from '../useMutation';
 import { useQuery } from '../useQuery';
 
@@ -190,10 +185,8 @@ it('should create a function to perform mutations', async () => {
   );
 
   // TODO: It doesn't pass if not invoked twice
-  flushEffects();
-  await waitForNextTick();
-  flushEffects();
-  await waitForNextTick();
+  await flushEffectsAndWait();
+  await flushEffectsAndWait();
 
   const firstCheckbox = container.querySelector<HTMLInputElement>(
     'input:checked'
@@ -201,8 +194,7 @@ it('should create a function to perform mutations', async () => {
   expect(firstCheckbox.checked).toBeTruthy();
 
   fireEvent.click(firstCheckbox);
-  await waitForNextTick();
-  flushEffects();
+  await flushEffectsAndWait();
 
   expect(container.querySelector('input')!.checked).toBeFalsy();
 });
@@ -252,15 +244,12 @@ it('should allow to pass options forwarded to the mutation', async () => {
   );
 
   // TODO: It doesn't pass if not invoked twice
-  flushEffects();
-  await waitForNextTick();
-  flushEffects();
-  await waitForNextTick();
+  await flushEffectsAndWait();
+  await flushEffectsAndWait();
 
   const addTaskButton = getByTestId('add-task-button');
   fireEvent.click(addTaskButton);
-  await waitForNextTick();
-  flushEffects();
+  await flushEffectsAndWait();
 
   expect(container.querySelectorAll('li')).toHaveLength(4);
   expect(container.querySelectorAll('li')[3].textContent).toBe('Learn Jest');
