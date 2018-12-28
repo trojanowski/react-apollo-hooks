@@ -18,6 +18,14 @@ import {
 } from './queryCache';
 import { Omit, objToKey } from './utils';
 
+export interface QueryHookState<TData>
+  extends Pick<
+    ApolloCurrentResult<undefined | TData>,
+    'error' | 'errors' | 'loading' | 'partial'
+  > {
+  data?: TData;
+}
+
 export interface QueryHookOptions<TVariables>
   extends Omit<QueryOptions<TVariables>, 'query'> {
   // watch query options from apollo client
@@ -26,14 +34,6 @@ export interface QueryHookOptions<TVariables>
   // custom options of `useQuery` hook
   skip?: boolean;
   suspend?: boolean;
-}
-
-export interface QueryHookState<TData>
-  extends Pick<
-    ApolloCurrentResult<undefined | TData>,
-    'error' | 'errors' | 'loading' | 'partial'
-  > {
-  data?: TData;
 }
 
 export interface QueryHookResult<TData, TVariables>
@@ -68,7 +68,7 @@ export function useQuery<TData = any, TVariables = OperationVariables>(
     fetchResults,
   }: QueryHookOptions<TVariables> = {}
 ): QueryHookResult<TData, TVariables> {
-  const client = useApolloClient()!;
+  const client = useApolloClient();
 
   const watchQueryOptions: WatchQueryOptions<TVariables> = useMemo(
     () => ({
@@ -99,7 +99,7 @@ export function useQuery<TData = any, TVariables = OperationVariables>(
 
   const observableQuery = useMemo(
     () =>
-      getCachedObservableQuery<TData, TVariables>(client!, watchQueryOptions),
+      getCachedObservableQuery<TData, TVariables>(client, watchQueryOptions),
     [client, watchQueryOptions]
   );
 
