@@ -13,6 +13,7 @@
       true,
       [
         "jest-dom",
+        "jest-react-profiler",
         "graphql-tag",
         "apollo-link",
         "apollo-cache",
