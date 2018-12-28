@@ -30,5 +30,5 @@ export function useMutation<TData, TVariables = OperationVariables>(
 ): MutationFn<TData, TVariables> {
   const client = useApolloClient();
 
-  return options => client!.mutate({ mutation, ...baseOptions, ...options });
+  return options => client.mutate({ mutation, ...baseOptions, ...options });
 }

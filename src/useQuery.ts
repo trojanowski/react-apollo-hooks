@@ -66,7 +66,7 @@ export function useQuery<TData = any, TVariables = OperationVariables>(
       const subscription = observableQuery.current!.subscribe(nextResult => {
         setResult(nextResult);
       });
-      invalidateCachedObservableQuery(client!, query, restOptions);
+      invalidateCachedObservableQuery(client, query, restOptions);
 
       return () => {
         subscription.unsubscribe();
@@ -104,7 +104,7 @@ export function useQuery<TData = any, TVariables = OperationVariables>(
     previousQuery.current = query;
     previousRestOptions.current = restOptions;
     const watchedQuery = getCachedObservableQuery<TData, TVariables>(
-      client!,
+      client,
       query,
       restOptions
     );
