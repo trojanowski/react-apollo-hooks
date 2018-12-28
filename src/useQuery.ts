@@ -18,7 +18,7 @@ import {
   getCachedObservableQuery,
   invalidateCachedObservableQuery,
 } from './queryCache';
-import objToKey, { Omit } from './utils';
+import { Omit, objToKey } from './utils';
 
 export interface QueryHookState<TData>
   extends Pick<

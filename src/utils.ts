@@ -2,7 +2,7 @@ import isPlainObject from 'lodash/isPlainObject';
 
 export type Omit<T, K extends keyof T> = Pick<T, Exclude<keyof T, K>>;
 
-export default function objToKey(obj: Record<string, any>): null | string {
+export function objToKey(obj: Record<string, any>): null | string {
   if (!obj) {
     return null;
   }
