@@ -1,20 +1,20 @@
 export const SAMPLE_TASKS = [
   {
+    __typename: 'Task',
+    completed: true,
     id: '1',
     text: 'Learn GraphQL',
-    completed: true,
-    __typename: 'Task',
   },
   {
+    __typename: 'Task',
+    completed: false,
     id: '2',
     text: 'Learn React',
-    completed: false,
-    __typename: 'Task',
   },
   {
+    __typename: 'Task',
+    completed: false,
     id: '3',
     text: 'Learn Apollo',
-    completed: false,
-    __typename: 'Task',
   },
 ];

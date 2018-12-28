@@ -10,6 +10,7 @@ import {
 import { ApolloProvider, useMutation, useQuery } from '..';
 import createClient from '../__testutils__/createClient';
 import { SAMPLE_TASKS } from '../__testutils__/data';
+import noop from '../__testutils__/noop';
 import waitForNextTick from '../__testutils__/waitForNextTick';
 
 const TASKS_MOCKS = [
@@ -29,8 +30,8 @@ const TASKS_MOCKS = [
     },
     result: {
       data: {
-        tasks: [...SAMPLE_TASKS],
         __typename: 'Query',
+        tasks: [...SAMPLE_TASKS],
       },
     },
   },
@@ -50,12 +51,12 @@ const TASKS_MOCKS = [
     },
     result: {
       data: {
-        toggleTask: {
-          id: '1',
-          completed: false,
-          __typename: 'Task',
-        },
         __typename: 'Mutation',
+        toggleTask: {
+          __typename: 'Task',
+          completed: false,
+          id: '1',
+        },
       },
     },
   },
@@ -76,13 +77,13 @@ const TASKS_MOCKS = [
     },
     result: {
       data: {
-        addTask: {
-          id: '4',
-          completed: false,
-          text: 'Learn Jest',
-          __typename: 'Task',
-        },
         __typename: 'Mutation',
+        addTask: {
+          __typename: 'Task',
+          completed: false,
+          id: '4',
+          text: 'Learn Jest',
+        },
       },
     },
   },
@@ -117,7 +118,19 @@ const ADD_TASK_MUTATION = gql`
   }
 `;
 
-function Task({ onChange, task }) {
+interface TaskFragment {
+  id: number;
+  text: string;
+  completed: boolean;
+}
+
+function Task({
+  onChange,
+  task,
+}: {
+  task: TaskFragment;
+  onChange: (task: TaskFragment) => void;
+}) {
   return (
     <li>
       <input
@@ -130,7 +143,13 @@ function Task({ onChange, task }) {
   );
 }
 
-function TaskList({ onChange, tasks }) {
+function TaskList({
+  onChange,
+  tasks,
+}: {
+  tasks: TaskFragment[];
+  onChange: (task: TaskFragment) => void;
+}) {
   return (
     <ul>
       {tasks.map(task => (
@@ -163,7 +182,7 @@ it('should create a function to perform mutations', async () => {
   const { container } = render(
     <ApolloProvider client={client}>
       <Suspense fallback={<div>Loading</div>}>
-        <TasksWithMutation query={TASKS_QUERY} />
+        <TasksWithMutation />
       </Suspense>
     </ApolloProvider>
   );
@@ -174,32 +193,38 @@ it('should create a function to perform mutations', async () => {
   flushEffects();
   await waitForNextTick();
 
-  const firstCheckbox = container.querySelector('input:checked');
+  const firstCheckbox = container.querySelector<HTMLInputElement>(
+    'input:checked'
+  )!;
   expect(firstCheckbox.checked).toBeTruthy();
 
   fireEvent.click(firstCheckbox);
   await waitForNextTick();
   flushEffects();
 
-  expect(container.querySelector('input').checked).toBeFalsy();
+  expect(container.querySelector('input')!.checked).toBeFalsy();
 });
 
 it('should allow to pass options forwarded to the mutation', async () => {
   function TasksWithMutation() {
     const { data, error } = useQuery(TASKS_QUERY);
-    const addTask = useMutation(ADD_TASK_MUTATION, {
-      update: (proxy, mutationResult) => {
-        const previousData = proxy.readQuery({ query: TASKS_QUERY });
-        previousData.tasks.push(mutationResult.data.addTask);
-        proxy.writeQuery({ data: previousData, query: TASKS_QUERY });
-      },
-      variables: {
-        input: {
-          text: 'Learn Jest',
+    const addTask = useMutation<any, { input: Partial<TaskFragment> }>(
+      ADD_TASK_MUTATION,
+      {
+        update: (proxy, mutationResult) => {
+          const previousData = proxy.readQuery<{ tasks: TaskFragment[] }>({
+            query: TASKS_QUERY,
+          });
+          previousData!.tasks.push(mutationResult!.data!.addTask);
+          proxy.writeQuery({ data: previousData, query: TASKS_QUERY });
         },
-      },
-    });
-    const onChange = () => {};
+        variables: {
+          input: {
+            text: 'Learn Jest',
+          },
+        },
+      }
+    );
 
     if (error) {
       throw error;
@@ -207,8 +232,8 @@ it('should allow to pass options forwarded to the mutation', async () => {
 
     return (
       <>
-        <TaskList onChange={onChange} tasks={data.tasks} />
-        <button data-testid="add-task-button" onClick={addTask}>
+        <TaskList onChange={noop} tasks={data.tasks} />
+        <button data-testid="add-task-button" onClick={() => addTask()}>
           Add new task
         </button>
       </>
@@ -219,7 +244,7 @@ it('should allow to pass options forwarded to the mutation', async () => {
   const { container, getByTestId } = render(
     <ApolloProvider client={client}>
       <Suspense fallback={<div>Loading</div>}>
-        <TasksWithMutation query={TASKS_QUERY} />
+        <TasksWithMutation />
       </Suspense>
     </ApolloProvider>
   );

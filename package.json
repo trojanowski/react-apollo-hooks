@@ -4,19 +4,20 @@
   "description": "",
   "main": "lib/index.js",
   "module": "es/index.js",
+  "typings": "lib/index.d.ts",
   "files": [
     "es",
-    "lib",
-    "src/index.d.ts"
+    "lib"
   ],
   "scripts": {
-    "build:cjs": "rimraf lib && babel src --ignore '**/__tests__' --ignore '**/__testutils__' -d lib",
-    "build:es": "rimraf es && cross-env ES_MODULES=true babel src --ignore '**/__tests__' --ignore '**/__testutils__' -d es",
-    "build": "npm run build:cjs && npm run build:es",
+    "build:cjs": "rimraf lib && babel src --extensions '.ts' --extensions '.tsx' --ignore '**/__tests__' --ignore '**/__testutils__' -d lib",
+    "build:es": "rimraf es && cross-env ES_MODULES=true babel src --extensions '.ts' --extensions '.tsx' --ignore '**/__tests__' --ignore '**/__testutils__' -d es",
+    "build:typings": "tsc -p tsconfig.typings.json",
+    "build": "npm run build:cjs && npm run build:es && npm run build:typings",
+    "typings-check": "tsc --noEmit",
     "format-check": "prettier --list-different \"**/*.{js,ts,tsx}\"",
     "format": "prettier --write \"**/*.{js,ts,tsx}\"",
-    "lint-ci": "eslint --max-warnings=0 .",
-    "lint": "eslint .",
+    "lint": "tslint --project . \"src/**/*.{ts,tsx}\"",
     "prepublishOnly": "npm run build",
     "test": "jest"
   },
@@ -27,13 +28,26 @@
     "type": "git",
     "url": "https://github.com/trojanowski/react-apollo-hooks.git"
   },
-  "types": "./src/index.d.ts",
   "jest": {
-    "setupTestFrameworkScriptFile": "./src/__testutils__/setupTests.js",
+    "setupTestFrameworkScriptFile": "./src/__testutils__/setupTests.ts",
+    "transform": {
+      "^.+\\.(ts|tsx)$": "babel-jest"
+    },
+    "testMatch": [
+      "**/__tests__/**/*-test.ts?(x)"
+    ],
     "testPathIgnorePatterns": [
       "/<rootDir>/es/",
       "/<rootDir>/lib/",
       "/node_modules/"
+    ],
+    "moduleFileExtensions": [
+      "ts",
+      "tsx",
+      "js",
+      "json",
+      "jsx",
+      "node"
     ]
   },
   "husky": {
@@ -42,12 +56,14 @@
     }
   },
   "lint-staged": {
-    "**/*.{js,ts,tsx}": [
-      "prettier --single-quote --write",
+    "**/*.js": [
+      "prettier --write",
       "git add"
     ],
-    "**/*.js": [
-      "eslint --max-warnings=0"
+    "**/*.{ts,tsx}": [
+      "tslint --fix --project .",
+      "prettier --write",
+      "git add"
     ]
   },
   "peerDependencies": {
@@ -64,24 +80,18 @@
     "@babel/core": "^7.1.5",
     "@babel/preset-env": "^7.1.0",
     "@babel/preset-react": "^7.0.0",
+    "@babel/preset-typescript": "^7.1.0",
     "@types/graphql": "^14.0.3",
-    "@types/react": "^16.4.18",
+    "@types/jest": "^23.3.10",
+    "@types/lodash": "^4.14.119",
+    "@types/react": "^16.7.17",
     "apollo-cache-inmemory": "^1.3.11",
     "apollo-client": "^2.4.7",
     "apollo-link": "^1.2.4",
     "apollo-link-mock": "^1.0.1",
-    "babel-core": "^7.0.0-bridge",
-    "babel-eslint": "9.x",
+    "babel-core": "^7.0.0-bridge.0",
     "babel-jest": "^23.6.0",
     "cross-env": "^5.2.0",
-    "eslint": "5.x",
-    "eslint-config-prettier": "^3.3.0",
-    "eslint-config-react-app": "^3.0.5",
-    "eslint-plugin-flowtype": "2.x",
-    "eslint-plugin-import": "2.x",
-    "eslint-plugin-jsx-a11y": "6.x",
-    "eslint-plugin-react": "7.x",
-    "eslint-plugin-react-hooks": "^0.0.0",
     "graphql": "^14.0.2",
     "graphql-tag": "^2.10.0",
     "husky": "^1.2.0",
@@ -94,6 +104,9 @@
     "react-testing-library": "^5.3.1",
     "rimraf": "^2.6.2",
     "standard-version": "^4.4.0",
-    "typescript": "^3.1.3"
+    "tslint": "^5.12.0",
+    "tslint-config-prettier": "^1.17.0",
+    "tslint-react": "^3.6.0",
+    "typescript": "^3.2.2"
   }
 }

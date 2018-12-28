@@ -1,4 +1,0 @@
-/es/*
-/lib/*
-/node_modules/*
-!.babelrc.js
