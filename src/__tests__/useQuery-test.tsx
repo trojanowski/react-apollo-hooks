@@ -3,12 +3,11 @@ import gql from 'graphql-tag';
 import React, { ReactElement, Suspense } from 'react';
 import { cleanup, flushEffects, render } from 'react-testing-library';
 
-import { ApolloProvider } from '../ApolloContext';
+import { ApolloProvider, QueryHookOptions, useQuery } from '..';
 import createClient from '../__testutils__/createClient';
 import { SAMPLE_TASKS } from '../__testutils__/data';
 import noop from '../__testutils__/noop';
 import waitForNextTick from '../__testutils__/waitForNextTick';
-import { QueryHookOptions, useQuery } from '../useQuery';
 
 const TASKS_MOCKS = [
   {
