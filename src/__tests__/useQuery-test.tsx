@@ -461,18 +461,9 @@ it('should ignore apollo errors by default in non-suspense mode', async () => {
 
   await flushEffectsAndWait();
 
-  expect(consoleLogMock).toBeCalledTimes(1);
-  expect(consoleLogMock.mock.calls[0][0]).toMatchInlineSnapshot(
-    `"Unhandled error"`
-  );
-  expect(consoleLogMock.mock.calls[0][1]).toMatchInlineSnapshot(
-    `"Network error: Simulating network error"`
-  );
-
-  // TODO: It should show error state.
   expect(container).toMatchInlineSnapshot(`
 <div>
-  Loading without suspense
+  Network error: Simulating network error
 </div>
 `);
 
@@ -578,7 +569,10 @@ it("shouldn't make obsolete renders in suspense mode", async () => {
     style=""
   >
     <li>
-      Learn GraphQL
+      Learn React
+    </li>
+    <li>
+      Learn Apollo
     </li>
   </ul>
 </div>
