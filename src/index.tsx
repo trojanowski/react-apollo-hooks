@@ -51,7 +51,11 @@ export function ApolloProvider<TCacheShape = any>({
 export function useApolloClient<TCache = object>(): null | ApolloClient<
   TCache
 > {
-  return useContext(ApolloContext);
+  const client = useContext(ApolloContext);
+
+  assertApolloClient(client);
+
+  return client;
 }
 
 export interface QueryHookOptions<TVariables>
@@ -195,8 +199,6 @@ export function useMutation<TData, TVariables = OperationVariables>(
   baseOptions?: MutationHookOptions<TData, TVariables>
 ): MutationFn<TData, TVariables> {
   const client = useApolloClient();
-
-  assertApolloClient(client);
 
   return options => client!.mutate({ mutation, ...baseOptions, ...options });
 }
