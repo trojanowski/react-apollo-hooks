@@ -18,6 +18,14 @@ import {
 } from './queryCache';
 import { Omit, objToKey } from './utils';
 
+export interface QueryHookState<TData>
+  extends Pick<
+    ApolloCurrentResult<undefined | TData>,
+    'error' | 'errors' | 'loading' | 'partial'
+  > {
+  data?: TData;
+}
+
 export interface QueryHookOptions<TVariables>
   extends Omit<QueryOptions<TVariables>, 'query'> {
   // watch query options from apollo client
@@ -25,14 +33,6 @@ export interface QueryHookOptions<TVariables>
   pollInterval?: number;
   // custom options of `useQuery` hook
   suspend?: boolean;
-}
-
-export interface QueryHookState<TData>
-  extends Pick<
-    ApolloCurrentResult<undefined | TData>,
-    'error' | 'errors' | 'loading' | 'partial'
-  > {
-  data?: TData;
 }
 
 export interface QueryHookResult<TData, TVariables>
