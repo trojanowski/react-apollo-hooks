@@ -30,7 +30,7 @@ export interface QueryHookOptions<TVariables>
 export interface QueryHookState<TData>
   extends Pick<
     ApolloCurrentResult<undefined | TData>,
-    'error' | 'errors' | 'loading'
+    'error' | 'errors' | 'loading' | 'partial'
   > {
   data?: TData;
 }
@@ -105,13 +105,14 @@ export function useQuery<TData = any, TVariables = OperationVariables>(
 
   const currentResult = useMemo<QueryHookState<TData>>(
     () => {
-      const { data, error, errors, loading } = observableQuery.currentResult();
+      const result = observableQuery.currentResult();
 
       return {
-        data: data as TData,
-        error,
-        errors,
-        loading,
+        data: result.data as TData,
+        error: result.error,
+        errors: result.errors,
+        loading: result.loading,
+        partial: result.partial,
       };
     },
     [responseId, observableQuery]
@@ -143,14 +144,10 @@ export function useQuery<TData = any, TVariables = OperationVariables>(
     updateQuery: observableQuery.updateQuery.bind(observableQuery),
   };
 
-  if (suspend) {
-    const current = observableQuery.currentResult();
-
-    if (current.partial) {
-      // throw a promise - use the react suspense to wait until the data is
-      // available
-      throw observableQuery.result();
-    }
+  if (suspend && currentResult.partial) {
+    // throw a promise - use the react suspense to wait until the data is
+    // available
+    throw observableQuery.result();
   }
 
   return { ...helpers, ...currentResult };
