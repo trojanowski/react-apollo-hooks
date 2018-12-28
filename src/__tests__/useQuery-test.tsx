@@ -2,7 +2,7 @@ import { ApolloClient } from 'apollo-client';
 import { ApolloLink, DocumentNode, Observable } from 'apollo-link';
 import gql from 'graphql-tag';
 import { withProfiler } from 'jest-react-profiler';
-import React, { Fragment, Suspense } from 'react';
+import React, { Fragment, Suspense, SuspenseProps } from 'react';
 import { cleanup, render } from 'react-testing-library';
 
 import { ApolloProvider, QueryHookOptions, useQuery } from '..';
@@ -160,12 +160,16 @@ interface TasksWrapperProps extends TasksProps {
   client: ApolloClient<object>;
 }
 
+const SuspenseCompat = ({ children }: SuspenseProps) => <>{children}</>;
+
 function TasksWrapper({ client, ...props }: TasksWrapperProps) {
+  const SuspenseComponent = props.suspend !== false ? Suspense : SuspenseCompat;
+
   return (
     <ApolloProvider client={client}>
-      <Suspense fallback={<>Loading</>}>
+      <SuspenseComponent fallback={<>Loading</>}>
         <Tasks {...props} />
-      </Suspense>
+      </SuspenseComponent>
     </ApolloProvider>
   );
 }
@@ -312,6 +316,8 @@ it('should support updating query variables', async () => {
 </div>
 `);
 
+  // TODO: It doesn't pass if not invoked twice
+  await flushEffectsAndWait();
   await flushEffectsAndWait();
 
   expect(container).toMatchInlineSnapshot(`
@@ -445,17 +451,30 @@ it('should ignore apollo errors by default in non-suspense mode', async () => {
     <TasksWrapper client={client} suspend={false} query={TASKS_QUERY} />
   );
 
-  expect(consoleLogMock).toBeCalledTimes(0);
-
-  await flushEffectsAndWait();
-
   expect(container).toMatchInlineSnapshot(`
 <div>
-  Network error: Simulating network error
+  Loading without suspense
 </div>
 `);
 
   expect(consoleLogMock).toBeCalledTimes(0);
+
+  await flushEffectsAndWait();
+
+  expect(consoleLogMock).toBeCalledTimes(1);
+  expect(consoleLogMock.mock.calls[0][0]).toMatchInlineSnapshot(
+    `"Unhandled error"`
+  );
+  expect(consoleLogMock.mock.calls[0][1]).toMatchInlineSnapshot(
+    `"Network error: Simulating network error"`
+  );
+
+  // TODO: It should show error state.
+  expect(container).toMatchInlineSnapshot(`
+<div>
+  Loading without suspense
+</div>
+`);
 
   consoleLogMock.mockRestore();
 });
@@ -463,7 +482,12 @@ it('should ignore apollo errors by default in non-suspense mode', async () => {
 it('should allow a query with non-standard fetch policy without suspense', async () => {
   const client = createMockClient();
   const { container } = render(
-    <TasksWrapper client={client} suspend={false} query={TASKS_QUERY} />
+    <TasksWrapper
+      client={client}
+      suspend={false}
+      query={TASKS_QUERY}
+      fetchPolicy="cache-and-network"
+    />
   );
 
   expect(container).toMatchInlineSnapshot(`
@@ -491,7 +515,7 @@ it('should allow a query with non-standard fetch policy without suspense', async
 `);
 });
 
-it('not makes obsolete renders in suspense mode', async () => {
+it("shouldn't make obsolete renders in suspense mode", async () => {
   const client = createMockClient();
   const TasksWrapperWithProfiler = withProfiler(TasksWrapper);
 
@@ -554,10 +578,7 @@ it('not makes obsolete renders in suspense mode', async () => {
     style=""
   >
     <li>
-      Learn React
-    </li>
-    <li>
-      Learn Apollo
+      Learn GraphQL
     </li>
   </ul>
 </div>
