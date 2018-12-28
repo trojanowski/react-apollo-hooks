@@ -313,8 +313,6 @@ it('should support updating query variables', async () => {
 </div>
 `);
 
-  // TODO: It doesn't pass if not invoked twice
-  await flushEffectsAndWait();
   await flushEffectsAndWait();
 
   expect(container).toMatchInlineSnapshot(`
@@ -444,19 +442,21 @@ it('should ignore apollo errors by default in non-suspense mode', async () => {
   const client = createMockClient(linkReturningError);
   const consoleLogMock = jest.spyOn(console, 'error').mockImplementation(noop);
 
-  render(<TasksWrapper client={client} suspend={false} query={TASKS_QUERY} />);
+  const { container } = render(
+    <TasksWrapper client={client} suspend={false} query={TASKS_QUERY} />
+  );
 
   expect(consoleLogMock).toBeCalledTimes(0);
 
   await flushEffectsAndWait();
 
-  expect(consoleLogMock).toBeCalledTimes(1);
-  expect(consoleLogMock.mock.calls[0][0]).toMatchInlineSnapshot(
-    `"Unhandled error"`
-  );
-  expect(consoleLogMock.mock.calls[0][1]).toMatchInlineSnapshot(
-    `"Network error: Simulating network error"`
-  );
+  expect(container).toMatchInlineSnapshot(`
+<div>
+  Network error: Simulating network error
+</div>
+`);
+
+  expect(consoleLogMock).toBeCalledTimes(0);
 
   consoleLogMock.mockRestore();
 });
@@ -555,7 +555,10 @@ it('not makes obsolete renders in suspense mode', async () => {
     style=""
   >
     <li>
-      Learn GraphQL
+      Learn React
+    </li>
+    <li>
+      Learn Apollo
     </li>
   </ul>
 </div>

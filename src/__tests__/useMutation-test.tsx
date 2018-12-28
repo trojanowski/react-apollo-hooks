@@ -184,8 +184,6 @@ it('should create a function to perform mutations', async () => {
     </ApolloProvider>
   );
 
-  // TODO: It doesn't pass if not invoked twice
-  await flushEffectsAndWait();
   await flushEffectsAndWait();
 
   const firstCheckbox = container.querySelector<HTMLInputElement>(
@@ -243,8 +241,6 @@ it('should allow to pass options forwarded to the mutation', async () => {
     </ApolloProvider>
   );
 
-  // TODO: It doesn't pass if not invoked twice
-  await flushEffectsAndWait();
   await flushEffectsAndWait();
 
   const addTaskButton = getByTestId('add-task-button');
