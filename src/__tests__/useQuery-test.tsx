@@ -447,7 +447,15 @@ it('should ignore apollo errors by default in non-suspense mode', async () => {
   const client = createMockClient(linkReturningError);
   const consoleLogMock = jest.spyOn(console, 'error').mockImplementation(noop);
 
-  render(<TasksWrapper client={client} suspend={false} query={TASKS_QUERY} />);
+  const { container } = render(
+    <TasksWrapper client={client} suspend={false} query={TASKS_QUERY} />
+  );
+
+  expect(container).toMatchInlineSnapshot(`
+<div>
+  Loading without suspense
+</div>
+`);
 
   expect(consoleLogMock).toBeCalledTimes(0);
 
@@ -461,13 +469,25 @@ it('should ignore apollo errors by default in non-suspense mode', async () => {
     `"Network error: Simulating network error"`
   );
 
+  // TODO: It should show error state.
+  expect(container).toMatchInlineSnapshot(`
+<div>
+  Loading without suspense
+</div>
+`);
+
   consoleLogMock.mockRestore();
 });
 
 it('should allow a query with non-standard fetch policy without suspense', async () => {
   const client = createMockClient();
   const { container } = render(
-    <TasksWrapper client={client} suspend={false} query={TASKS_QUERY} />
+    <TasksWrapper
+      client={client}
+      suspend={false}
+      query={TASKS_QUERY}
+      fetchPolicy="cache-and-network"
+    />
   );
 
   expect(container).toMatchInlineSnapshot(`
@@ -495,7 +515,7 @@ it('should allow a query with non-standard fetch policy without suspense', async
 `);
 });
 
-it('not makes obsolete renders in suspense mode', async () => {
+it("shouldn't make obsolete renders in suspense mode", async () => {
   const client = createMockClient();
   const TasksWrapperWithProfiler = withProfiler(TasksWrapper);
 
