@@ -120,9 +120,10 @@ export function useQuery<TData = any, TVariables = OperationVariables>(
 
   useEffect(
     () => {
+      const invalidateCurrentResult = () => setResponseId(x => x + 1);
       const subscription = observableQuery.subscribe(
-        () => setResponseId(x => x + 1),
-        () => setResponseId(x => x + 1)
+        invalidateCurrentResult,
+        invalidateCurrentResult
       );
 
       invalidateCachedObservableQuery(client, watchQueryOptions);
