@@ -4,7 +4,7 @@ export type Omit<T, K extends keyof T> = Pick<T, Exclude<keyof T, K>>;
 
 export function objToKey(obj: Record<string, any>): null | string {
   if (!obj) {
-    return null;
+    return obj;
   }
   const sortedObj = Object.keys(obj)
     .sort()
