@@ -422,7 +422,7 @@ it("shouldn't allow a query with non-standard fetch policy with suspense", async
   consoleErrorMock.mockRestore();
 });
 
-it('should forward apollo errors', async () => {
+it("shouldn't ignore apollo errors in non-suspense mode", async () => {
   const client = createMockClient(linkReturningError);
   const { container } = render(
     <TasksWrapper client={client} query={TASKS_QUERY} />
