@@ -86,8 +86,8 @@ export function useQuery<TData = any, TVariables = OperationVariables>(
       pollInterval,
       notifyOnNetworkStatusChange,
 
-      context,
-      metadata,
+      context && objToKey(context),
+      metadata && objToKey(metadata),
       variables && objToKey(variables),
       fetchPolicy,
       errorPolicy,
