@@ -66,23 +66,20 @@ export function useQuery<TData = any, TVariables = OperationVariables>(
     context,
     metadata,
     variables,
-    fetchPolicy,
+    fetchPolicy: actualCachePolicy,
     errorPolicy,
     fetchResults,
   }: QueryHookOptions<TVariables> = {}
 ): QueryHookResult<TData, TVariables> {
   const client = useApolloClient();
-
   const ssrManager = useContext(SSRContext);
+
+  const fetchPolicy = !ssrManager ? actualCachePolicy : 'cache-first';
   const watchQueryOptions: WatchQueryOptions<TVariables> = useMemo(
     () => ({
       context,
       errorPolicy,
-      fetchPolicy:
-        ssrManager == null ||
-        (fetchPolicy !== 'network-only' && fetchPolicy !== 'cache-and-network')
-          ? fetchPolicy
-          : 'cache-first',
+      fetchPolicy,
       fetchResults,
       metadata,
       notifyOnNetworkStatusChange,
@@ -159,7 +156,8 @@ export function useQuery<TData = any, TVariables = OperationVariables>(
     updateQuery: observableQuery.updateQuery.bind(observableQuery),
   };
 
-  if (skip || (!ssr && ssrManager != null)) {
+  // Skips when skip={true} or SSRContext passed but ssr={false}
+  if (skip || (ssrManager && !ssr)) {
     // Taken from https://github.com/apollographql/react-apollo/blob/5cb63b3625ce5e4a3d3e4ba132eaec2a38ef5d90/src/Query.tsx#L376-L381
     return {
       ...helpers,
@@ -176,6 +174,7 @@ export function useQuery<TData = any, TVariables = OperationVariables>(
       throw observableQuery.result();
     }
 
+    // Register request only when `ssr` not `false`.
     if (ssr && ssrManager) {
       ssrManager.register(observableQuery.result());
     }
