@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { createSSRManager, SSRContext } from './internal/SSRContext';
+import { SSRContext, createSSRManager } from './internal/SSRContext';
 
 export interface GetMarkupFromTreeOptions {
   tree: React.ReactNode;

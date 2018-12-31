@@ -1,13 +1,14 @@
-import createClient from '../__testutils__/createClient';
-import gql from 'graphql-tag';
-import * as React from 'react';
-import { MockedResponse } from 'apollo-link-mock/lib';
-import { ApolloProvider } from '../ApolloContext';
-import { useQuery, QueryHookOptions } from '../useQuery';
-import { getMarkupFromTree } from '../getMarkupFromTree';
-import { renderToString } from 'react-dom/server';
 import ApolloClient from 'apollo-client';
 import { ApolloLink, Observable } from 'apollo-link';
+import { MockedResponse } from 'apollo-link-mock';
+import gql from 'graphql-tag';
+import * as React from 'react';
+import { renderToString } from 'react-dom/server';
+
+import { ApolloProvider } from '../ApolloContext';
+import createClient from '../__testutils__/createClient';
+import { getMarkupFromTree } from '../getMarkupFromTree';
+import { QueryHookOptions, useQuery } from '../useQuery';
 
 const AUTH_QUERY = gql`
   {
@@ -31,7 +32,7 @@ interface UserQueryResult {
   currentUser: { firstName: string };
 }
 
-const MOCKS: Array<MockedResponse> = [
+const MOCKS: MockedResponse[] = [
   {
     request: { query: AUTH_QUERY },
     result: { data: { isAuthorized: true } },
@@ -97,7 +98,7 @@ it('should run through all of the queries that want SSR', async () => {
       renderFunction: renderToString,
       tree: <UserDetailsWrapper client={client} />,
     })
-  ).resolves.toMatchSnapshot();
+  ).resolves.toMatchInlineSnapshot(`"<div>James</div>"`);
 });
 
 it('should allow network-only fetchPolicy as an option and still render prefetched data', () => {
@@ -108,7 +109,7 @@ it('should allow network-only fetchPolicy as an option and still render prefetch
       renderFunction: renderToString,
       tree: <UserDetailsWrapper client={client} fetchPolicy="network-only" />,
     })
-  ).resolves.toMatchSnapshot();
+  ).resolves.toMatchInlineSnapshot(`"<div>James</div>"`);
 });
 
 it('should allow cache-and-network fetchPolicy as an option and still render prefetched data', () => {
@@ -121,7 +122,7 @@ it('should allow cache-and-network fetchPolicy as an option and still render pre
         <UserDetailsWrapper client={client} fetchPolicy="cache-and-network" />
       ),
     })
-  ).resolves.toMatchSnapshot();
+  ).resolves.toMatchInlineSnapshot(`"<div>James</div>"`);
 });
 
 it('should pick up queries deep in the render tree', () => {
@@ -137,11 +138,10 @@ it('should pick up queries deep in the render tree', () => {
   );
 
   return expect(
-    getMarkupFromTree({
-      tree: <Container />,
-      renderFunction: renderToString,
-    })
-  ).resolves.toMatchSnapshot();
+    getMarkupFromTree({ renderFunction: renderToString, tree: <Container /> })
+  ).resolves.toMatchInlineSnapshot(
+    `"<div><span>Hi</span><div><div>James</div></div></div>"`
+  );
 });
 
 it('should handle nested queries that depend on each other', () => {
@@ -168,11 +168,10 @@ it('should handle nested queries that depend on each other', () => {
   };
 
   return expect(
-    getMarkupFromTree({
-      tree: <Container />,
-      renderFunction: renderToString,
-    })
-  ).resolves.toMatchSnapshot();
+    getMarkupFromTree({ renderFunction: renderToString, tree: <Container /> })
+  ).resolves.toMatchInlineSnapshot(
+    `"<div><div>Authorized: <!-- -->true</div><div>James</div></div>"`
+  );
 });
 
 it('should return the first of multiple errors thrown by nested wrapped components', () => {
@@ -194,10 +193,7 @@ it('should return the first of multiple errors thrown by nested wrapped componen
   };
 
   return expect(
-    getMarkupFromTree({
-      tree: <Container />,
-      renderFunction: renderToString,
-    })
+    getMarkupFromTree({ renderFunction: renderToString, tree: <Container /> })
   ).rejects.toBe(fooError);
 });
 
@@ -207,9 +203,13 @@ it('should handle errors thrown by queries', async () => {
 
   await expect(
     getMarkupFromTree({ tree, renderFunction: renderToString })
-  ).rejects.toMatchSnapshot();
+  ).rejects.toMatchInlineSnapshot(
+    `[Error: Network error: Simulating network error]`
+  );
 
-  expect(renderToString(tree)).toMatchSnapshot();
+  expect(renderToString(tree)).toMatchInlineSnapshot(
+    `"<div>Loading user details</div>"`
+  );
 });
 
 it('should correctly skip queries', async () => {
@@ -218,9 +218,9 @@ it('should correctly skip queries', async () => {
   await expect(
     getMarkupFromTree({
       renderFunction: renderToString,
-      tree: <UserDetailsWrapper client={client} skip={true} />,
+      tree: <UserDetailsWrapper client={client} skip />,
     })
-  ).resolves.toMatchSnapshot();
+  ).resolves.toMatchInlineSnapshot(`"<div>Loading user details</div>"`);
 
   expect(client.cache.extract()).toEqual({});
 });
@@ -233,7 +233,21 @@ it('should use the correct default props for a query', async () => {
     tree: <UserDetailsWrapper client={client} />,
   });
 
-  expect(client.cache.extract()).toMatchSnapshot();
+  expect(client.cache.extract()).toMatchInlineSnapshot(`
+Object {
+  "$ROOT_QUERY.currentUser": Object {
+    "firstName": "James",
+  },
+  "ROOT_QUERY": Object {
+    "currentUser": Object {
+      "generated": true,
+      "id": "$ROOT_QUERY.currentUser",
+      "type": "id",
+      "typename": undefined,
+    },
+  },
+}
+`);
 });
 
 it("shouldn't run queries if ssr is turned to off", async () => {
@@ -244,7 +258,7 @@ it("shouldn't run queries if ssr is turned to off", async () => {
       renderFunction: renderToString,
       tree: <UserDetailsWrapper client={client} ssr={false} />,
     })
-  ).resolves.toMatchSnapshot();
+  ).resolves.toMatchInlineSnapshot(`"<div>Loading user details</div>"`);
 
   expect(client.cache.extract()).toEqual({});
 });
@@ -263,5 +277,5 @@ it('should not require `ApolloProvider` to be the root component', () => {
         </Root>
       ),
     })
-  ).resolves.toMatchSnapshot();
+  ).resolves.toMatchInlineSnapshot(`"<div><div>James</div></div>"`);
 });

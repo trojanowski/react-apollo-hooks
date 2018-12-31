@@ -35,5 +35,3 @@ Object {
 `;
 
 exports[`shouldn't run queries if ssr is turned to off 1`] = `"<div>Loading user details</div>"`;
-
-exports[`shouldn't run queries if ssr is turned to off 2`] = `Object {}`;
