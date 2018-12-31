@@ -10,7 +10,7 @@ import {
   WatchQueryOptions,
 } from 'apollo-client';
 import { DocumentNode } from 'graphql';
-import { useEffect, useMemo, useState } from 'react';
+import { useContext, useEffect, useMemo, useState } from 'react';
 import { useApolloClient } from './ApolloContext';
 import { SSRContext } from './internal/SSRContext';
 import {
@@ -78,12 +78,12 @@ export function useQuery<TData = any, TVariables = OperationVariables>(
     () => ({
       context,
       errorPolicy,
-      fetchPolicy,
-      fetchResults:
+      fetchPolicy:
         ssrManager == null ||
         (fetchPolicy !== 'network-only' && fetchPolicy !== 'cache-and-network')
           ? fetchPolicy
           : 'cache-first',
+      fetchResults,
       metadata,
       notifyOnNetworkStatusChange,
       pollInterval,
