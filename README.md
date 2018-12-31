@@ -112,15 +112,11 @@ To check if data is loaded use the
 ```javascript
 import React, { Suspense } from 'react';
 
-const MyComponent = () => {
-  return (
-    return (
-      <Suspense fallback={<div>Loading...</div>}>
-        <Dogs />
-      </Suspense>
-    )
-  );
-}
+const MyComponent = () => (
+  <Suspense fallback={<div>Loading...</div>}>
+    <Dogs />
+  </Suspense>
+);
 ```
 
 Alternatively you can use the `useQuery` hook without suspense with the
