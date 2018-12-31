@@ -4,22 +4,20 @@
   "description": "",
   "main": "lib/index.js",
   "module": "es/index.js",
-  "typings": "typings/index.d.ts",
+  "typings": "lib/index.d.ts",
   "files": [
     "es",
-    "lib",
-    "typings/**"
+    "lib"
   ],
   "scripts": {
     "build:cjs": "rimraf lib && babel src --extensions '.ts' --extensions '.tsx' --ignore '**/__tests__' --ignore '**/__testutils__' -d lib",
     "build:es": "rimraf es && cross-env ES_MODULES=true babel src --extensions '.ts' --extensions '.tsx' --ignore '**/__tests__' --ignore '**/__testutils__' -d es",
-    "build:typings": "rimraf typings && tsc -p tsconfig.typings.json",
+    "build:typings": "tsc -p tsconfig.typings.json",
     "build": "npm run build:cjs && npm run build:es && npm run build:typings",
     "typings-check": "tsc --noEmit",
     "format-check": "prettier --list-different \"**/*.{js,ts,tsx}\"",
     "format": "prettier --write \"**/*.{js,ts,tsx}\"",
-    "lint-ci": "eslint --ext ts --ext tsx --max-warnings=0 .",
-    "lint": "eslint --ext ts --ext tsx .",
+    "lint": "tslint --project . \"src/**/*.{ts,tsx}\"",
     "prepublishOnly": "npm run build",
     "test": "jest"
   },
@@ -58,12 +56,14 @@
     }
   },
   "lint-staged": {
-    "**/*.{js,ts,tsx}": [
-      "prettier --single-quote --write",
+    "**/*.js": [
+      "prettier --write",
       "git add"
     ],
-    "**/*.js": [
-      "eslint --max-warnings=0"
+    "**/*.{ts,tsx}": [
+      "tslint --fix --project .",
+      "prettier --write",
+      "git add"
     ]
   },
   "peerDependencies": {
@@ -90,18 +90,8 @@
     "apollo-link": "^1.2.4",
     "apollo-link-mock": "^1.0.1",
     "babel-core": "^7.0.0-bridge.0",
-    "babel-eslint": "9.x",
     "babel-jest": "^23.6.0",
     "cross-env": "^5.2.0",
-    "eslint": "5.x",
-    "eslint-config-prettier": "^3.3.0",
-    "eslint-config-react-app": "^3.0.5",
-    "eslint-plugin-flowtype": "2.x",
-    "eslint-plugin-import": "2.x",
-    "eslint-plugin-jsx-a11y": "6.x",
-    "eslint-plugin-react": "7.x",
-    "eslint-plugin-react-hooks": "^0.0.0",
-    "eslint-plugin-typescript": "^0.14.0",
     "graphql": "^14.0.2",
     "graphql-tag": "^2.10.0",
     "husky": "^1.2.0",
@@ -115,7 +105,9 @@
     "react-testing-library": "^5.3.1",
     "rimraf": "^2.6.2",
     "standard-version": "^4.4.0",
-    "typescript": "^3.2.2",
-    "typescript-eslint-parser": "^21.0.2"
+    "tslint": "^5.12.0",
+    "tslint-config-prettier": "^1.17.0",
+    "tslint-react": "^3.6.0",
+    "typescript": "^3.2.2"
   }
 }

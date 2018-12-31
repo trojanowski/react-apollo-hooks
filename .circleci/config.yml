@@ -33,7 +33,7 @@ jobs:
           command: yarn typings-check
       - run:
           name: Lint code
-          command: yarn lint-ci
+          command: yarn lint
       - run:
           name: test
           command: yarn test

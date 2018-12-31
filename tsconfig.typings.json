@@ -3,7 +3,7 @@
   "exclude": ["**/__tests__/**", "**/__testutils__/**"],
   "compilerOptions": {
     "declaration": true,
-    "declarationDir": "typings",
+    "declarationDir": "lib",
     "emitDeclarationOnly": true
   }
 }

@@ -1,14 +1,15 @@
-import { DocumentNode, ApolloLink, Observable } from 'apollo-link';
+import { ApolloClient } from 'apollo-client';
+import { ApolloLink, DocumentNode, Observable } from 'apollo-link';
 import gql from 'graphql-tag';
-import React, { Suspense, useRef } from 'react';
-import { cleanup, flushEffects, render } from 'react-testing-library';
+import { withProfiler } from 'jest-react-profiler';
+import React, { Fragment, Suspense, SuspenseProps } from 'react';
+import { cleanup, render } from 'react-testing-library';
 
-import { ApolloProvider } from '../ApolloContext';
+import { ApolloProvider, QueryHookOptions, useQuery } from '..';
 import createClient from '../__testutils__/createClient';
 import { SAMPLE_TASKS } from '../__testutils__/data';
-import waitForNextTick from '../__testutils__/waitForNextTick';
-import { useQuery, QueryHookOptions } from '../useQuery';
-import { withProfiler } from 'jest-react-profiler';
+import flushEffectsAndWait from '../__testutils__/flushEffectsAndWait';
+import noop from '../__testutils__/noop';
 
 const TASKS_MOCKS = [
   {
@@ -27,8 +28,8 @@ const TASKS_MOCKS = [
     },
     result: {
       data: {
-        tasks: [...SAMPLE_TASKS],
         __typename: 'Query',
+        tasks: [...SAMPLE_TASKS],
       },
     },
   },
@@ -51,8 +52,8 @@ const TASKS_MOCKS = [
     },
     result: {
       data: {
-        tasks: SAMPLE_TASKS.filter(task => task.completed),
         __typename: 'Query',
+        tasks: SAMPLE_TASKS.filter(task => task.completed),
       },
     },
   },
@@ -75,8 +76,8 @@ const TASKS_MOCKS = [
     },
     result: {
       data: {
-        tasks: SAMPLE_TASKS.filter(task => !task.completed),
         __typename: 'Query',
+        tasks: SAMPLE_TASKS.filter(task => !task.completed),
       },
     },
   },
@@ -102,12 +103,6 @@ const FILTERED_TASKS_QUERY = gql`
   }
 `;
 
-function flushAndWait() {
-  flushEffects();
-
-  return waitForNextTick();
-}
-
 const linkReturningError = new ApolloLink(
   () =>
     new Observable(observer => {
@@ -115,24 +110,8 @@ const linkReturningError = new ApolloLink(
     })
 );
 
-class ErrorBoundary extends React.Component<{}, { error: null | Error }> {
-  constructor(props: {}) {
-    super(props);
-
-    this.state = { error: null };
-  }
-
-  static getDerivedStateFromError(error: Error) {
-    return { error };
-  }
-
-  render() {
-    if (this.state.error) {
-      return <div data-testid="error-boundary">{this.state.error.message}</div>;
-    }
-
-    return this.props.children;
-  }
+function createMockClient(link?: ApolloLink) {
+  return createClient({ link, mocks: TASKS_MOCKS });
 }
 
 interface TasksProps<TVariables = any> extends QueryHookOptions<TVariables> {
@@ -141,11 +120,9 @@ interface TasksProps<TVariables = any> extends QueryHookOptions<TVariables> {
 
 function TaskList({ tasks }: { tasks: Array<{ id: number; text: string }> }) {
   return (
-    <ul data-testid="task-list">
+    <ul>
       {tasks.map(task => (
-        <li key={task.id} data-testid="task-list-item">
-          {task.text}
-        </li>
+        <li key={task.id}>{task.text}</li>
       ))}
     </ul>
   );
@@ -155,346 +132,459 @@ function Tasks({ query, ...options }: TasksProps) {
   const { data, error, errors, loading } = useQuery(query, options);
 
   if (error) {
-    return <div data-testid="error">{error.message}</div>;
+    return <>{error.message}</>;
   }
 
   if (errors) {
     return (
-      <div data-testid="errors">
+      <>
         {errors.map(x => (
-          <div key={x.message} data-testid="errors-item">
-            {x.message}
-          </div>
+          <Fragment key={x.message}>{x.message}</Fragment>
         ))}
-      </div>
+      </>
     );
   }
 
   if (loading) {
-    return (
-      <div data-testid="loading-without-suspense">Loading without suspense</div>
-    );
+    return <>Loading without suspense</>;
   }
 
   if (!data) {
-    return <div data-testid="skipped-loading">Skipped loading of data</div>;
+    return <>Skipped loading of data</>;
   }
 
   return <TaskList tasks={data.tasks} />;
 }
 
 interface TasksWrapperProps extends TasksProps {
-  link?: ApolloLink;
+  client: ApolloClient<object>;
 }
 
-function TasksWrapper({ link, ...props }: TasksWrapperProps) {
-  const client = useRef(createClient({ link, mocks: TASKS_MOCKS }));
+const SuspenseCompat = ({ children }: SuspenseProps) => <>{children}</>;
+
+function TasksWrapper({ client, ...props }: TasksWrapperProps) {
+  const SuspenseComponent = props.suspend !== false ? Suspense : SuspenseCompat;
 
   return (
-    <ErrorBoundary>
-      <ApolloProvider client={client.current}>
-        <Suspense fallback={<div data-testid="loading">Loading</div>}>
-          <Tasks {...props} />
-        </Suspense>
-      </ApolloProvider>
-    </ErrorBoundary>
+    <ApolloProvider client={client}>
+      <SuspenseComponent fallback={<>Loading</>}>
+        <Tasks {...props} />
+      </SuspenseComponent>
+    </ApolloProvider>
   );
 }
 
 afterEach(cleanup);
 
 it('should return the query data', async () => {
-  const { queryByTestId, queryAllByTestId } = render(
-    <TasksWrapper query={TASKS_QUERY} />
+  const client = createMockClient();
+  const { container } = render(
+    <TasksWrapper client={client} query={TASKS_QUERY} />
   );
 
-  expect(queryByTestId('loading')).toBeVisible();
+  expect(container).toMatchInlineSnapshot(`
+<div>
+  Loading
+</div>
+`);
 
-  await flushAndWait();
+  await flushEffectsAndWait();
 
-  expect(queryByTestId('task-list')).toBeVisible();
-  expect(queryAllByTestId('task-list-item')).toHaveLength(3);
+  expect(container).toMatchInlineSnapshot(`
+<div>
+  <ul>
+    <li>
+      Learn GraphQL
+    </li>
+    <li>
+      Learn React
+    </li>
+    <li>
+      Learn Apollo
+    </li>
+  </ul>
+</div>
+`);
 });
 
 it('should work with suspense disabled', async () => {
-  const { queryByTestId, queryAllByTestId } = render(
-    <TasksWrapper suspend={false} query={TASKS_QUERY} />
+  const client = createMockClient();
+  const { container } = render(
+    <TasksWrapper client={client} suspend={false} query={TASKS_QUERY} />
   );
 
-  expect(queryByTestId('loading-without-suspense')).toBeVisible();
+  expect(container).toMatchInlineSnapshot(`
+<div>
+  Loading without suspense
+</div>
+`);
 
-  await flushAndWait();
+  await flushEffectsAndWait();
 
-  expect(queryByTestId('task-list')).toBeVisible();
-  expect(queryAllByTestId('task-list-item')).toHaveLength(3);
+  expect(container).toMatchInlineSnapshot(`
+<div>
+  <ul>
+    <li>
+      Learn GraphQL
+    </li>
+    <li>
+      Learn React
+    </li>
+    <li>
+      Learn Apollo
+    </li>
+  </ul>
+</div>
+`);
 });
 
 it('should support query variables', async () => {
-  const { queryByTestId, queryAllByTestId } = render(
+  const client = createMockClient();
+  const { container } = render(
     <TasksWrapper
+      client={client}
       query={FILTERED_TASKS_QUERY}
       variables={{ completed: true }}
     />
   );
 
-  expect(queryByTestId('loading')).toBeVisible();
+  expect(container).toMatchInlineSnapshot(`
+<div>
+  Loading
+</div>
+`);
 
-  await flushAndWait();
+  await flushEffectsAndWait();
 
-  expect(queryByTestId('task-list')).toBeVisible();
-  expect(queryAllByTestId('task-list-item')).toHaveLength(1);
+  expect(container).toMatchInlineSnapshot(`
+<div>
+  <ul>
+    <li>
+      Learn GraphQL
+    </li>
+  </ul>
+</div>
+`);
 });
 
 it('should support updating query variables', async () => {
-  const { rerender, queryByTestId, queryAllByTestId } = render(
+  const client = createMockClient();
+  const { container, rerender } = render(
     <TasksWrapper
+      client={client}
       query={FILTERED_TASKS_QUERY}
       variables={{ completed: true }}
     />
   );
 
-  expect(queryByTestId('loading')).toBeVisible();
+  expect(container).toMatchInlineSnapshot(`
+<div>
+  Loading
+</div>
+`);
 
-  await flushAndWait();
+  await flushEffectsAndWait();
 
-  expect(queryByTestId('task-list')).toBeVisible();
-  expect(queryAllByTestId('task-list-item')).toHaveLength(1);
+  expect(container).toMatchInlineSnapshot(`
+<div>
+  <ul>
+    <li>
+      Learn GraphQL
+    </li>
+  </ul>
+</div>
+`);
 
   rerender(
     <TasksWrapper
+      client={client}
       query={FILTERED_TASKS_QUERY}
       variables={{ completed: false }}
     />
   );
 
-  expect(queryByTestId('loading')).toBeVisible();
+  expect(container).toMatchInlineSnapshot(`
+<div>
+  <ul
+    style="display: none;"
+  >
+    <li>
+      Learn GraphQL
+    </li>
+  </ul>
+  Loading
+</div>
+`);
 
-  await flushAndWait();
+  // TODO: It doesn't pass if not invoked twice
+  await flushEffectsAndWait();
+  await flushEffectsAndWait();
 
-  expect(queryByTestId('task-list')).toBeVisible();
-  expect(queryAllByTestId('task-list-item')).toHaveLength(2);
+  expect(container).toMatchInlineSnapshot(`
+<div>
+  <ul
+    style=""
+  >
+    <li>
+      Learn React
+    </li>
+    <li>
+      Learn Apollo
+    </li>
+  </ul>
+</div>
+`);
 
   rerender(
     <TasksWrapper
+      client={client}
       query={FILTERED_TASKS_QUERY}
       variables={{ completed: true }}
     />
   );
 
-  expect(queryByTestId('task-list')).toBeVisible();
-  expect(queryAllByTestId('task-list-item')).toHaveLength(1);
+  expect(container).toMatchInlineSnapshot(`
+<div>
+  <ul
+    style=""
+  >
+    <li>
+      Learn GraphQL
+    </li>
+  </ul>
+</div>
+`);
 });
 
 it("shouldn't suspend if the data is already cached", async () => {
-  const { rerender, queryByTestId, queryAllByTestId } = render(
+  const client = createMockClient();
+  const { container, rerender } = render(
     <TasksWrapper
+      client={client}
       query={FILTERED_TASKS_QUERY}
       variables={{ completed: true }}
     />
   );
 
-  await flushAndWait();
+  await flushEffectsAndWait();
 
   rerender(
     <TasksWrapper
+      client={client}
       query={FILTERED_TASKS_QUERY}
       variables={{ completed: false }}
     />
   );
 
-  await flushAndWait();
+  await flushEffectsAndWait();
 
   rerender(
     <TasksWrapper
+      client={client}
       query={FILTERED_TASKS_QUERY}
       variables={{ completed: true }}
     />
   );
 
-  expect(queryByTestId('task-list')).toBeVisible();
-  expect(queryAllByTestId('task-list-item')).toHaveLength(1);
+  expect(container).toMatchInlineSnapshot(`
+<div>
+  <ul
+    style=""
+  >
+    <li>
+      Learn GraphQL
+    </li>
+  </ul>
+</div>
+`);
 });
 
 it("shouldn't allow a query with non-standard fetch policy with suspense", async () => {
-  const spy = jest.spyOn(console, 'error').mockImplementation(() => {});
+  const client = createMockClient();
+  const consoleErrorMock = jest
+    .spyOn(console, 'error')
+    .mockImplementation(noop);
 
-  const { getByTestId } = render(
-    <TasksWrapper query={TASKS_QUERY} fetchPolicy="cache-and-network" />
-  );
-
-  expect(spy).toBeCalledTimes(1);
-  expect(spy.mock.calls[0][1]).toEqual(
-    new Error(
-      "Fetch policy cache-and-network is not supported without 'suspend: false'"
+  expect(() =>
+    render(
+      <TasksWrapper
+        client={client}
+        query={TASKS_QUERY}
+        fetchPolicy="cache-and-network"
+      />
     )
+  ).toThrowErrorMatchingInlineSnapshot(
+    `"Fetch policy cache-and-network is not supported without 'suspend: false'"`
   );
 
-  expect(getByTestId('error-boundary')).toHaveTextContent(
-    "Fetch policy cache-and-network is not supported without 'suspend: false'"
-  );
+  expect(consoleErrorMock).toBeCalled();
 
-  spy.mockRestore();
+  consoleErrorMock.mockRestore();
 });
 
-it('should forward apollo errors', async () => {
-  const { getByTestId } = render(
-    <TasksWrapper query={TASKS_QUERY} link={linkReturningError} />
+it("shouldn't ignore apollo errors in non-suspense mode", async () => {
+  const client = createMockClient(linkReturningError);
+  const { container } = render(
+    <TasksWrapper client={client} query={TASKS_QUERY} />
   );
 
-  expect(getByTestId('loading')).toBeVisible();
+  expect(container).toMatchInlineSnapshot(`
+<div>
+  Loading
+</div>
+`);
 
-  await flushAndWait();
+  await flushEffectsAndWait();
 
-  expect(getByTestId('error')).toHaveTextContent(
-    'Network error: Simulating network error'
-  );
+  expect(container).toMatchInlineSnapshot(`
+<div>
+  Network error: Simulating network error
+</div>
+`);
 });
 
 it('should ignore apollo errors by default in non-suspense mode', async () => {
-  const spy = jest.spyOn(console, 'error').mockImplementation(() => {});
+  const client = createMockClient(linkReturningError);
+  const consoleLogMock = jest.spyOn(console, 'error').mockImplementation(noop);
 
-  const { getByTestId } = render(
-    <TasksWrapper
-      suspend={false}
-      query={TASKS_QUERY}
-      link={linkReturningError}
-    />
+  const { container } = render(
+    <TasksWrapper client={client} suspend={false} query={TASKS_QUERY} />
   );
 
-  expect(getByTestId('loading-without-suspense')).toBeVisible();
+  expect(container).toMatchInlineSnapshot(`
+<div>
+  Loading without suspense
+</div>
+`);
 
-  await flushAndWait();
+  expect(consoleLogMock).toBeCalledTimes(0);
 
-  expect(getByTestId('error')).toHaveTextContent(
-    'Network error: Simulating network error'
-  );
+  await flushEffectsAndWait();
 
-  expect(spy).toBeCalledTimes(0);
+  expect(container).toMatchInlineSnapshot(`
+<div>
+  Network error: Simulating network error
+</div>
+`);
 
-  spy.mockRestore();
+  consoleLogMock.mockRestore();
 });
 
 it('should allow a query with non-standard fetch policy without suspense', async () => {
-  const { getByTestId, getAllByTestId } = render(
-    <TasksWrapper suspend={false} query={TASKS_QUERY} />
+  const client = createMockClient();
+  const { container } = render(
+    <TasksWrapper
+      client={client}
+      suspend={false}
+      query={TASKS_QUERY}
+      fetchPolicy="cache-and-network"
+    />
   );
 
-  expect(getByTestId('loading-without-suspense')).toBeVisible();
+  expect(container).toMatchInlineSnapshot(`
+<div>
+  Loading without suspense
+</div>
+`);
 
-  await flushAndWait();
+  await flushEffectsAndWait();
 
-  expect(getByTestId('task-list')).toBeVisible();
-  expect(getAllByTestId('task-list-item')).toHaveLength(3);
+  expect(container).toMatchInlineSnapshot(`
+<div>
+  <ul>
+    <li>
+      Learn GraphQL
+    </li>
+    <li>
+      Learn React
+    </li>
+    <li>
+      Learn Apollo
+    </li>
+  </ul>
+</div>
+`);
 });
 
-it('skips query in suspense mode', async () => {
-  const { getByTestId } = render(
-    <TasksWrapper skip={true} query={TASKS_QUERY} />
-  );
-
-  expect(getByTestId('skipped-loading')).toBeVisible();
-
-  await flushAndWait();
-
-  expect(getByTestId('skipped-loading')).toBeVisible();
-});
-
-it('skips query in non-suspense mode', async () => {
-  const { getByTestId } = render(
-    <TasksWrapper skip={true} suspend={false} query={TASKS_QUERY} />
-  );
-
-  expect(getByTestId('skipped-loading')).toBeVisible();
-
-  await flushAndWait();
-
-  expect(getByTestId('skipped-loading')).toBeVisible();
-});
-
-it('starts skipped query in suspense mode', async () => {
-  const { rerender, getByTestId, getAllByTestId } = render(
-    <TasksWrapper skip={true} query={TASKS_QUERY} />
-  );
-
-  expect(getByTestId('skipped-loading')).toBeVisible();
-
-  await flushAndWait();
-
-  expect(getByTestId('skipped-loading')).toBeVisible();
-
-  rerender(<TasksWrapper skip={false} query={TASKS_QUERY} />);
-
-  expect(getByTestId('loading')).toBeVisible();
-
-  await flushAndWait();
-
-  expect(getByTestId('task-list')).toBeVisible();
-  expect(getAllByTestId('task-list-item')).toHaveLength(3);
-});
-
-it('starts skipped query in non-suspense mode', async () => {
-  const { rerender, getByTestId, getAllByTestId } = render(
-    <TasksWrapper skip={true} suspend={false} query={TASKS_QUERY} />
-  );
-
-  expect(getByTestId('skipped-loading')).toBeVisible();
-
-  await flushAndWait();
-
-  expect(getByTestId('skipped-loading')).toBeVisible();
-
-  rerender(<TasksWrapper skip={false} suspend={false} query={TASKS_QUERY} />);
-
-  expect(getByTestId('loading-without-suspense')).toBeVisible();
-
-  await flushAndWait();
-
-  expect(getByTestId('task-list')).toBeVisible();
-  expect(getAllByTestId('task-list-item')).toHaveLength(3);
-});
-
-it('not makes obsolete renders in suspense mode', async () => {
+it("shouldn't make obsolete renders in suspense mode", async () => {
+  const client = createMockClient();
   const TasksWrapperWithProfiler = withProfiler(TasksWrapper);
 
-  const { rerender, getByTestId, getAllByTestId } = render(
+  const { container, rerender } = render(
     <TasksWrapperWithProfiler
+      client={client}
       query={FILTERED_TASKS_QUERY}
       variables={{ completed: true }}
     />
   );
 
-  expect(getByTestId('loading')).toBeVisible();
+  expect(container).toMatchInlineSnapshot(`
+<div>
+  Loading
+</div>
+`);
 
   expect(TasksWrapperWithProfiler).toHaveCommittedTimes(1);
 
-  await flushAndWait();
+  await flushEffectsAndWait();
 
-  expect(getByTestId('task-list')).toBeVisible();
-  expect(getAllByTestId('task-list-item')).toHaveLength(1);
+  expect(container).toMatchInlineSnapshot(`
+<div>
+  <ul>
+    <li>
+      Learn GraphQL
+    </li>
+  </ul>
+</div>
+`);
 
   expect(TasksWrapperWithProfiler).toHaveCommittedTimes(1);
 
   rerender(
     <TasksWrapperWithProfiler
+      client={client}
       query={FILTERED_TASKS_QUERY}
       variables={{ completed: false }}
     />
   );
 
-  expect(getByTestId('loading')).toBeVisible();
-  expect(TasksWrapperWithProfiler).toHaveCommittedTimes(1);
+  expect(container).toMatchInlineSnapshot(`
+<div>
+  <ul
+    style="display: none;"
+  >
+    <li>
+      Learn GraphQL
+    </li>
+  </ul>
+  Loading
+</div>
+`);
 
-  await flushAndWait();
+  await flushEffectsAndWait();
 
-  expect(getByTestId('task-list')).toBeVisible();
-  expect(getAllByTestId('task-list-item')).toHaveLength(2);
+  expect(container).toMatchInlineSnapshot(`
+<div>
+  <ul
+    style=""
+  >
+    <li>
+      Learn React
+    </li>
+    <li>
+      Learn Apollo
+    </li>
+  </ul>
+</div>
+`);
 
   expect(TasksWrapperWithProfiler).toHaveCommittedTimes(
-    2 // TODO: Figure out why.
+    3 // TODO: Figure out why.
   );
 
   rerender(
     <TasksWrapperWithProfiler
+      client={client}
       query={FILTERED_TASKS_QUERY}
       variables={{ completed: true }}
     />
@@ -502,10 +592,163 @@ it('not makes obsolete renders in suspense mode', async () => {
 
   expect(TasksWrapperWithProfiler).toHaveCommittedTimes(1);
 
-  expect(getByTestId('task-list')).toBeVisible();
-  expect(getAllByTestId('task-list-item')).toHaveLength(1);
+  expect(container).toMatchInlineSnapshot(`
+<div>
+  <ul
+    style=""
+  >
+    <li>
+      Learn GraphQL
+    </li>
+  </ul>
+</div>
+`);
 
-  await flushAndWait();
+  await flushEffectsAndWait();
 
   expect(TasksWrapperWithProfiler).toHaveCommittedTimes(1);
+});
+
+it('skips query in suspense mode', async () => {
+  const client = createMockClient();
+  const { container } = render(
+    <TasksWrapper client={client} skip query={TASKS_QUERY} />
+  );
+
+  expect(container).toMatchInlineSnapshot(`
+<div>
+  Skipped loading of data
+</div>
+`);
+
+  await flushEffectsAndWait();
+
+  expect(container).toMatchInlineSnapshot(`
+<div>
+  Skipped loading of data
+</div>
+`);
+});
+
+it('skips query in non-suspense mode', async () => {
+  const client = createMockClient();
+  const { container } = render(
+    <TasksWrapper client={client} skip suspend={false} query={TASKS_QUERY} />
+  );
+
+  expect(container).toMatchInlineSnapshot(`
+<div>
+  Skipped loading of data
+</div>
+`);
+
+  await flushEffectsAndWait();
+
+  expect(container).toMatchInlineSnapshot(`
+<div>
+  Skipped loading of data
+</div>
+`);
+});
+
+it('starts skipped query in suspense mode', async () => {
+  const client = createMockClient();
+  const { rerender, container } = render(
+    <TasksWrapper client={client} skip query={TASKS_QUERY} />
+  );
+
+  expect(container).toMatchInlineSnapshot(`
+<div>
+  Skipped loading of data
+</div>
+`);
+
+  await flushEffectsAndWait();
+
+  expect(container).toMatchInlineSnapshot(`
+<div>
+  Skipped loading of data
+</div>
+`);
+
+  rerender(<TasksWrapper client={client} skip={false} query={TASKS_QUERY} />);
+
+  expect(container).toMatchInlineSnapshot(`
+<div>
+  
+  Loading
+</div>
+`);
+
+  await flushEffectsAndWait();
+
+  expect(container).toMatchInlineSnapshot(`
+<div>
+  <ul>
+    <li>
+      Learn GraphQL
+    </li>
+    <li>
+      Learn React
+    </li>
+    <li>
+      Learn Apollo
+    </li>
+  </ul>
+</div>
+`);
+});
+
+it('starts skipped query in non-suspense mode', async () => {
+  const client = createMockClient();
+  const { rerender, container } = render(
+    <TasksWrapper client={client} skip suspend={false} query={TASKS_QUERY} />
+  );
+
+  expect(container).toMatchInlineSnapshot(`
+<div>
+  Skipped loading of data
+</div>
+`);
+
+  await flushEffectsAndWait();
+
+  expect(container).toMatchInlineSnapshot(`
+<div>
+  Skipped loading of data
+</div>
+`);
+
+  rerender(
+    <TasksWrapper
+      client={client}
+      skip={false}
+      suspend={false}
+      query={TASKS_QUERY}
+    />
+  );
+
+  expect(container).toMatchInlineSnapshot(`
+<div>
+  Loading without suspense
+</div>
+`);
+
+  await flushEffectsAndWait();
+
+  expect(container).toMatchInlineSnapshot(`
+<div>
+  <ul>
+    <li>
+      Learn GraphQL
+    </li>
+    <li>
+      Learn React
+    </li>
+    <li>
+      Learn Apollo
+    </li>
+  </ul>
+</div>
+`);
 });

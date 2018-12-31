@@ -1,23 +1,31 @@
-import { DocumentNode } from 'graphql';
-import { useState, useEffect, useMemo, useContext } from 'react';
 import {
-  invalidateCachedObservableQuery,
-  getCachedObservableQuery,
-} from './queryCache';
-import objToKey, { Omit, assertApolloClient } from './Utils';
-import { useApolloClient } from './ApolloContext';
-import {
+  ApolloCurrentResult,
+  ApolloQueryResult,
+  FetchMoreOptions,
+  FetchMoreQueryOptions,
+  FetchPolicy,
+  ObservableQuery,
   OperationVariables,
   QueryOptions,
-  ObservableQuery,
-  ApolloQueryResult,
-  FetchMoreQueryOptions,
-  FetchMoreOptions,
-  FetchPolicy,
-  ApolloCurrentResult,
   WatchQueryOptions,
 } from 'apollo-client';
+import { DocumentNode } from 'graphql';
+import { useEffect, useMemo, useState } from 'react';
+import { useApolloClient } from './ApolloContext';
 import { SSRContext } from './internal/SSRContext';
+import {
+  getCachedObservableQuery,
+  invalidateCachedObservableQuery,
+} from './queryCache';
+import { Omit, objToKey } from './utils';
+
+export interface QueryHookState<TData>
+  extends Pick<
+    ApolloCurrentResult<undefined | TData>,
+    'error' | 'errors' | 'loading' | 'partial'
+  > {
+  data?: TData;
+}
 
 export interface QueryHookOptions<TVariables>
   extends Omit<QueryOptions<TVariables>, 'query'> {
@@ -28,14 +36,6 @@ export interface QueryHookOptions<TVariables>
   ssr?: boolean;
   skip?: boolean;
   suspend?: boolean;
-}
-
-export interface QueryHookState<TData>
-  extends Pick<
-    ApolloCurrentResult<undefined | TData>,
-    'error' | 'errors' | 'loading' | 'partial'
-  > {
-  data?: TData;
 }
 
 export interface QueryHookResult<TData, TVariables>
@@ -71,28 +71,24 @@ export function useQuery<TData = any, TVariables = OperationVariables>(
     fetchResults,
   }: QueryHookOptions<TVariables> = {}
 ): QueryHookResult<TData, TVariables> {
-  const client = useApolloClient()!;
-
-  assertApolloClient(client);
+  const client = useApolloClient();
 
   const ssrManager = useContext(SSRContext);
   const watchQueryOptions: WatchQueryOptions<TVariables> = useMemo(
     () => ({
-      query,
-
-      pollInterval,
-      notifyOnNetworkStatusChange,
-
       context,
-      metadata,
-      variables,
-      fetchPolicy:
+      errorPolicy,
+      fetchPolicy,
+      fetchResults:
         ssrManager == null ||
         (fetchPolicy !== 'network-only' && fetchPolicy !== 'cache-and-network')
           ? fetchPolicy
           : 'cache-first',
-      errorPolicy,
-      fetchResults,
+      metadata,
+      notifyOnNetworkStatusChange,
+      pollInterval,
+      query,
+      variables,
     }),
     [
       query,
@@ -100,8 +96,8 @@ export function useQuery<TData = any, TVariables = OperationVariables>(
       pollInterval,
       notifyOnNetworkStatusChange,
 
-      context,
-      metadata,
+      context && objToKey(context),
+      metadata && objToKey(metadata),
       variables && objToKey(variables),
       fetchPolicy,
       errorPolicy,
@@ -119,20 +115,14 @@ export function useQuery<TData = any, TVariables = OperationVariables>(
 
   const currentResult = useMemo<QueryHookState<TData>>(
     () => {
-      const {
-        data,
-        error,
-        errors,
-        loading,
-        partial,
-      } = observableQuery.currentResult();
+      const result = observableQuery.currentResult();
 
       return {
-        error,
-        errors,
-        loading,
-        partial,
-        data: data as TData,
+        data: result.data as TData,
+        error: result.error,
+        errors: result.errors,
+        loading: result.loading,
+        partial: result.partial,
       };
     },
     [skip, responseId, observableQuery]
@@ -144,9 +134,10 @@ export function useQuery<TData = any, TVariables = OperationVariables>(
         return;
       }
 
+      const invalidateCurrentResult = () => setResponseId(x => x + 1);
       const subscription = observableQuery.subscribe(
-        () => setResponseId(x => x + 1),
-        () => setResponseId(x => x + 1)
+        invalidateCurrentResult,
+        invalidateCurrentResult
       );
 
       invalidateCachedObservableQuery(client, watchQueryOptions);

@@ -1,18 +1,12 @@
 import gql from 'graphql-tag';
 import React, { Suspense } from 'react';
-import {
-  cleanup,
-  fireEvent,
-  flushEffects,
-  render,
-} from 'react-testing-library';
+import { cleanup, fireEvent, render } from 'react-testing-library';
 
-import { ApolloProvider } from '../ApolloContext';
+import { ApolloProvider, useMutation, useQuery } from '..';
 import createClient from '../__testutils__/createClient';
 import { SAMPLE_TASKS } from '../__testutils__/data';
-import waitForNextTick from '../__testutils__/waitForNextTick';
-import { useQuery } from '../useQuery';
-import { useMutation } from '../useMutation';
+import flushEffectsAndWait from '../__testutils__/flushEffectsAndWait';
+import noop from '../__testutils__/noop';
 
 const TASKS_MOCKS = [
   {
@@ -31,8 +25,8 @@ const TASKS_MOCKS = [
     },
     result: {
       data: {
-        tasks: [...SAMPLE_TASKS],
         __typename: 'Query',
+        tasks: [...SAMPLE_TASKS],
       },
     },
   },
@@ -52,12 +46,12 @@ const TASKS_MOCKS = [
     },
     result: {
       data: {
-        toggleTask: {
-          id: '1',
-          completed: false,
-          __typename: 'Task',
-        },
         __typename: 'Mutation',
+        toggleTask: {
+          __typename: 'Task',
+          completed: false,
+          id: '1',
+        },
       },
     },
   },
@@ -78,13 +72,13 @@ const TASKS_MOCKS = [
     },
     result: {
       data: {
-        addTask: {
-          id: '4',
-          completed: false,
-          text: 'Learn Jest',
-          __typename: 'Task',
-        },
         __typename: 'Mutation',
+        addTask: {
+          __typename: 'Task',
+          completed: false,
+          id: '4',
+          text: 'Learn Jest',
+        },
       },
     },
   },
@@ -148,7 +142,7 @@ function TaskList({
   onChange,
   tasks,
 }: {
-  tasks: Array<TaskFragment>;
+  tasks: TaskFragment[];
   onChange: (task: TaskFragment) => void;
 }) {
   return (
@@ -188,11 +182,7 @@ it('should create a function to perform mutations', async () => {
     </ApolloProvider>
   );
 
-  // TODO: It doesn't pass if not invoked twice
-  flushEffects();
-  await waitForNextTick();
-  flushEffects();
-  await waitForNextTick();
+  await flushEffectsAndWait();
 
   const firstCheckbox = container.querySelector<HTMLInputElement>(
     'input:checked'
@@ -200,8 +190,7 @@ it('should create a function to perform mutations', async () => {
   expect(firstCheckbox.checked).toBeTruthy();
 
   fireEvent.click(firstCheckbox);
-  await waitForNextTick();
-  flushEffects();
+  await flushEffectsAndWait();
 
   expect(container.querySelector('input')!.checked).toBeFalsy();
 });
@@ -226,7 +215,6 @@ it('should allow to pass options forwarded to the mutation', async () => {
         },
       }
     );
-    const onChange = () => {};
 
     if (error) {
       throw error;
@@ -234,7 +222,7 @@ it('should allow to pass options forwarded to the mutation', async () => {
 
     return (
       <>
-        <TaskList onChange={onChange} tasks={data.tasks} />
+        <TaskList onChange={noop} tasks={data.tasks} />
         <button data-testid="add-task-button" onClick={() => addTask()}>
           Add new task
         </button>
@@ -251,16 +239,11 @@ it('should allow to pass options forwarded to the mutation', async () => {
     </ApolloProvider>
   );
 
-  // TODO: It doesn't pass if not invoked twice
-  flushEffects();
-  await waitForNextTick();
-  flushEffects();
-  await waitForNextTick();
+  await flushEffectsAndWait();
 
   const addTaskButton = getByTestId('add-task-button');
   fireEvent.click(addTaskButton);
-  await waitForNextTick();
-  flushEffects();
+  await flushEffectsAndWait();
 
   expect(container.querySelectorAll('li')).toHaveLength(4);
   expect(container.querySelectorAll('li')[3].textContent).toBe('Learn Jest');
