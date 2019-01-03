@@ -156,7 +156,7 @@ export function useQuery<TData = any, TVariables = OperationVariables>(
     updateQuery: observableQuery.updateQuery.bind(observableQuery),
   };
 
-  // Skips when skip={true} or SSRContext passed but ssr={false}
+  // Skips when `skip: true` or SSRContext passed but `ssr: false`
   if (skip || (ssrManager && !ssr)) {
     // Taken from https://github.com/apollographql/react-apollo/blob/5cb63b3625ce5e4a3d3e4ba132eaec2a38ef5d90/src/Query.tsx#L376-L381
     return {
