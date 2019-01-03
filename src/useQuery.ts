@@ -174,7 +174,7 @@ export function useQuery<TData = any, TVariables = OperationVariables>(
       throw observableQuery.result();
     }
 
-    // Register request only when `ssr` not `false`.
+    // Register request only when `ssr: true`.
     if (ssr && ssrManager) {
       ssrManager.register(observableQuery.result());
     }
