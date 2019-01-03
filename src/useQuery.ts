@@ -74,7 +74,15 @@ export function useQuery<TData = any, TVariables = OperationVariables>(
   const client = useApolloClient();
   const ssrManager = useContext(SSRContext);
 
-  const fetchPolicy = !ssrManager ? actualCachePolicy : 'cache-first';
+  // Modify fetch policy for SSR mode.
+  const fetchPolicy =
+    ssrManager &&
+    // Taken from https://github.com/apollographql/react-apollo/blob/2d7e48b7d0c26e792e1ed26e98bb84d8fba5bb8a/src/Query.tsx#L167-L169
+    (actualCachePolicy === 'network-only' ||
+      actualCachePolicy === 'cache-and-network')
+      ? 'cache-first'
+      : actualCachePolicy;
+
   const watchQueryOptions: WatchQueryOptions<TVariables> = useMemo(
     () => ({
       context,
