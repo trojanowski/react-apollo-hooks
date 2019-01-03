@@ -608,3 +608,147 @@ it("shouldn't make obsolete renders in suspense mode", async () => {
 
   expect(TasksWrapperWithProfiler).toHaveCommittedTimes(1);
 });
+
+it('skips query in suspense mode', async () => {
+  const client = createMockClient();
+  const { container } = render(
+    <TasksWrapper client={client} skip query={TASKS_QUERY} />
+  );
+
+  expect(container).toMatchInlineSnapshot(`
+<div>
+  Skipped loading of data
+</div>
+`);
+
+  await flushEffectsAndWait();
+
+  expect(container).toMatchInlineSnapshot(`
+<div>
+  Skipped loading of data
+</div>
+`);
+});
+
+it('skips query in non-suspense mode', async () => {
+  const client = createMockClient();
+  const { container } = render(
+    <TasksWrapper client={client} skip suspend={false} query={TASKS_QUERY} />
+  );
+
+  expect(container).toMatchInlineSnapshot(`
+<div>
+  Skipped loading of data
+</div>
+`);
+
+  await flushEffectsAndWait();
+
+  expect(container).toMatchInlineSnapshot(`
+<div>
+  Skipped loading of data
+</div>
+`);
+});
+
+it('starts skipped query in suspense mode', async () => {
+  const client = createMockClient();
+  const { rerender, container } = render(
+    <TasksWrapper client={client} skip query={TASKS_QUERY} />
+  );
+
+  expect(container).toMatchInlineSnapshot(`
+<div>
+  Skipped loading of data
+</div>
+`);
+
+  await flushEffectsAndWait();
+
+  expect(container).toMatchInlineSnapshot(`
+<div>
+  Skipped loading of data
+</div>
+`);
+
+  rerender(<TasksWrapper client={client} skip={false} query={TASKS_QUERY} />);
+
+  expect(container).toMatchInlineSnapshot(`
+<div>
+  
+  Loading
+</div>
+`);
+
+  await flushEffectsAndWait();
+
+  expect(container).toMatchInlineSnapshot(`
+<div>
+  <ul>
+    <li>
+      Learn GraphQL
+    </li>
+    <li>
+      Learn React
+    </li>
+    <li>
+      Learn Apollo
+    </li>
+  </ul>
+</div>
+`);
+});
+
+it('starts skipped query in non-suspense mode', async () => {
+  const client = createMockClient();
+  const { rerender, container } = render(
+    <TasksWrapper client={client} skip suspend={false} query={TASKS_QUERY} />
+  );
+
+  expect(container).toMatchInlineSnapshot(`
+<div>
+  Skipped loading of data
+</div>
+`);
+
+  await flushEffectsAndWait();
+
+  expect(container).toMatchInlineSnapshot(`
+<div>
+  Skipped loading of data
+</div>
+`);
+
+  rerender(
+    <TasksWrapper
+      client={client}
+      skip={false}
+      suspend={false}
+      query={TASKS_QUERY}
+    />
+  );
+
+  expect(container).toMatchInlineSnapshot(`
+<div>
+  Loading without suspense
+</div>
+`);
+
+  await flushEffectsAndWait();
+
+  expect(container).toMatchInlineSnapshot(`
+<div>
+  <ul>
+    <li>
+      Learn GraphQL
+    </li>
+    <li>
+      Learn React
+    </li>
+    <li>
+      Learn Apollo
+    </li>
+  </ul>
+</div>
+`);
+});

@@ -32,6 +32,7 @@ export interface QueryHookOptions<TVariables>
   notifyOnNetworkStatusChange?: boolean;
   pollInterval?: number;
   // custom options of `useQuery` hook
+  skip?: boolean;
   suspend?: boolean;
 }
 
@@ -51,6 +52,7 @@ export function useQuery<TData = any, TVariables = OperationVariables>(
   query: DocumentNode,
   {
     // Hook options
+    skip = false,
     suspend = true,
 
     // Watch options
@@ -115,11 +117,15 @@ export function useQuery<TData = any, TVariables = OperationVariables>(
         partial: result.partial,
       };
     },
-    [responseId, observableQuery]
+    [skip, responseId, observableQuery]
   );
 
   useEffect(
     () => {
+      if (skip) {
+        return;
+      }
+
       const invalidateCurrentResult = () => setResponseId(x => x + 1);
       const subscription = observableQuery.subscribe(
         invalidateCurrentResult,
@@ -132,7 +138,7 @@ export function useQuery<TData = any, TVariables = OperationVariables>(
         subscription.unsubscribe();
       };
     },
-    [observableQuery]
+    [skip, observableQuery]
   );
 
   ensureSupportedFetchPolicy(suspend, fetchPolicy);
@@ -144,6 +150,16 @@ export function useQuery<TData = any, TVariables = OperationVariables>(
     stopPolling: observableQuery.stopPolling.bind(observableQuery),
     updateQuery: observableQuery.updateQuery.bind(observableQuery),
   };
+
+  if (skip) {
+    // Taken from https://github.com/apollographql/react-apollo/blob/5cb63b3625ce5e4a3d3e4ba132eaec2a38ef5d90/src/Query.tsx#L376-L381
+    return {
+      ...helpers,
+      data: undefined,
+      error: undefined,
+      loading: false,
+    };
+  }
 
   if (suspend && currentResult.partial) {
     // throw a promise - use the react suspense to wait until the data is
