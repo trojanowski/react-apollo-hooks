@@ -73,10 +73,12 @@ export function useQuery<TData = any, TVariables = OperationVariables>(
 ): QueryHookResult<TData, TVariables> {
   const client = useApolloClient();
   const ssrManager = useContext(SSRContext);
+  const ssrInUse = ssr && ssrManager;
 
-  // Modify fetch policy for SSR mode.
+  // Skips when `skip: true` or SSRContext passed but `ssr: false`
+  const shouldSkip = skip || (ssrManager != null && !ssr);
   const fetchPolicy =
-    ssrManager &&
+    ssrInUse &&
     // Taken from https://github.com/apollographql/react-apollo/blob/2d7e48b7d0c26e792e1ed26e98bb84d8fba5bb8a/src/Query.tsx#L167-L169
     (actualCachePolicy === 'network-only' ||
       actualCachePolicy === 'cache-and-network')
@@ -130,12 +132,12 @@ export function useQuery<TData = any, TVariables = OperationVariables>(
         partial: result.partial,
       };
     },
-    [skip, responseId, observableQuery]
+    [shouldSkip, responseId, observableQuery]
   );
 
   useEffect(
     () => {
-      if (skip) {
+      if (shouldSkip) {
         return;
       }
 
@@ -151,7 +153,7 @@ export function useQuery<TData = any, TVariables = OperationVariables>(
         subscription.unsubscribe();
       };
     },
-    [skip, observableQuery]
+    [shouldSkip, observableQuery]
   );
 
   ensureSupportedFetchPolicy(suspend, fetchPolicy);
@@ -164,8 +166,7 @@ export function useQuery<TData = any, TVariables = OperationVariables>(
     updateQuery: observableQuery.updateQuery.bind(observableQuery),
   };
 
-  // Skips when `skip: true` or SSRContext passed but `ssr: false`
-  if (skip || (ssrManager && !ssr)) {
+  if (shouldSkip) {
     // Taken from https://github.com/apollographql/react-apollo/blob/5cb63b3625ce5e4a3d3e4ba132eaec2a38ef5d90/src/Query.tsx#L376-L381
     return {
       ...helpers,
@@ -182,9 +183,8 @@ export function useQuery<TData = any, TVariables = OperationVariables>(
       throw observableQuery.result();
     }
 
-    // Register request only when `ssr: true`.
-    if (ssr && ssrManager) {
-      ssrManager.register(observableQuery.result());
+    if (ssrInUse) {
+      ssrManager!.register(observableQuery.result());
     }
   }
 
