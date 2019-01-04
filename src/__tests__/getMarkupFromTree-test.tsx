@@ -64,11 +64,15 @@ function UserDetails(props: QueryHookOptions<{}>) {
   const { data, loading } = useQuery<UserQueryResult>(USER_QUERY, props);
 
   return (
-    <div>
-      {loading || !data || !data.currentUser
-        ? 'Loading user details'
+    <>
+      {loading
+        ? 'Loading'
+        : !data
+        ? 'No Data (skipped)'
+        : !data.currentUser
+        ? 'No Current User (failed)'
         : data.currentUser.firstName}
-    </div>
+    </>
   );
 }
 
@@ -92,7 +96,7 @@ it('should run through all of the queries that want SSR with suspense', async ()
       renderFunction: renderToString,
       tree: <UserDetailsWrapper client={client} suspend />,
     })
-  ).resolves.toMatchInlineSnapshot(`"<div>James</div>"`);
+  ).resolves.toMatchInlineSnapshot(`"James"`);
 });
 
 it('should run through all of the queries that want SSR without suspense', async () => {
@@ -103,7 +107,7 @@ it('should run through all of the queries that want SSR without suspense', async
       renderFunction: renderToString,
       tree: <UserDetailsWrapper client={client} suspend={false} />,
     })
-  ).resolves.toMatchInlineSnapshot(`"<div>James</div>"`);
+  ).resolves.toMatchInlineSnapshot(`"James"`);
 });
 
 it('should allow network-only fetchPolicy as an option and still render prefetched data with suspense', async () => {
@@ -120,7 +124,7 @@ it('should allow network-only fetchPolicy as an option and still render prefetch
         />
       ),
     })
-  ).resolves.toMatchInlineSnapshot(`"<div>James</div>"`);
+  ).resolves.toMatchInlineSnapshot(`"James"`);
 });
 
 it('should allow network-only fetchPolicy as an option and still render prefetched data without suspense', async () => {
@@ -137,7 +141,7 @@ it('should allow network-only fetchPolicy as an option and still render prefetch
         />
       ),
     })
-  ).resolves.toMatchInlineSnapshot(`"<div>James</div>"`);
+  ).resolves.toMatchInlineSnapshot(`"James"`);
 });
 
 it('should allow cache-and-network fetchPolicy as an option and still render prefetched data with suspense', async () => {
@@ -154,7 +158,7 @@ it('should allow cache-and-network fetchPolicy as an option and still render pre
         />
       ),
     })
-  ).resolves.toMatchInlineSnapshot(`"<div>James</div>"`);
+  ).resolves.toMatchInlineSnapshot(`"James"`);
 });
 
 it('should allow cache-and-network fetchPolicy as an option and still render prefetched data without suspense', async () => {
@@ -171,7 +175,7 @@ it('should allow cache-and-network fetchPolicy as an option and still render pre
         />
       ),
     })
-  ).resolves.toMatchInlineSnapshot(`"<div>James</div>"`);
+  ).resolves.toMatchInlineSnapshot(`"James"`);
 });
 
 it('should pick up queries deep in the render tree with suspense', async () => {
@@ -193,7 +197,7 @@ it('should pick up queries deep in the render tree with suspense', async () => {
   await expect(
     getMarkupFromTree({ renderFunction: renderToString, tree: <Container /> })
   ).resolves.toMatchInlineSnapshot(
-    `"<div><span>Hi</span><div><div>James</div></div></div>"`
+    `"<div><span>Hi</span><div>James</div></div>"`
   );
 });
 
@@ -216,7 +220,7 @@ it('should pick up queries deep in the render tree without suspense', async () =
   await expect(
     getMarkupFromTree({ renderFunction: renderToString, tree: <Container /> })
   ).resolves.toMatchInlineSnapshot(
-    `"<div><span>Hi</span><div><div>James</div></div></div>"`
+    `"<div><span>Hi</span><div>James</div></div>"`
   );
 });
 
@@ -249,7 +253,7 @@ it('should handle nested queries that depend on each other with suspense', async
       tree: <Container />,
     })
   ).resolves.toMatchInlineSnapshot(
-    `"<div><div>Authorized: <!-- -->true</div><div>James</div></div>"`
+    `"<div><div>Authorized: <!-- -->true</div>James</div>"`
   );
 });
 
@@ -282,7 +286,7 @@ it('should handle nested queries that depend on each other without suspense', as
       tree: <Container />,
     })
   ).resolves.toMatchInlineSnapshot(
-    `"<div><div>Authorized: <!-- -->true</div><div>James</div></div>"`
+    `"<div><div>Authorized: <!-- -->true</div>James</div>"`
   );
 });
 
@@ -328,7 +332,7 @@ it('should handle errors thrown by queries with suspense', async () => {
   );
 
   expect(renderToString(tree)).toMatchInlineSnapshot(
-    `"<div>Loading user details</div>"`
+    `"No Current User (failed)"`
   );
 });
 
@@ -343,7 +347,7 @@ it('should handle errors thrown by queries without suspense', async () => {
   );
 
   expect(renderToString(tree)).toMatchInlineSnapshot(
-    `"<div>Loading user details</div>"`
+    `"No Current User (failed)"`
   );
 });
 
@@ -355,7 +359,7 @@ it('should correctly skip queries with suspense', async () => {
       renderFunction: renderToString,
       tree: <UserDetailsWrapper client={client} skip suspend />,
     })
-  ).resolves.toMatchInlineSnapshot(`"<div>Loading user details</div>"`);
+  ).resolves.toMatchInlineSnapshot(`"No Data (skipped)"`);
 
   expect(client.cache.extract()).toEqual({});
 });
@@ -368,7 +372,7 @@ it('should correctly skip queries without suspense', async () => {
       renderFunction: renderToString,
       tree: <UserDetailsWrapper client={client} skip suspend={false} />,
     })
-  ).resolves.toMatchInlineSnapshot(`"<div>Loading user details</div>"`);
+  ).resolves.toMatchInlineSnapshot(`"No Data (skipped)"`);
 
   expect(client.cache.extract()).toEqual({});
 });
@@ -431,7 +435,7 @@ it("shouldn't run queries if ssr is turned to off with suspense", async () => {
       renderFunction: renderToString,
       tree: <UserDetailsWrapper client={client} ssr={false} suspend />,
     })
-  ).resolves.toMatchInlineSnapshot(`"<div>Loading user details</div>"`);
+  ).resolves.toMatchInlineSnapshot(`"No Data (skipped)"`);
 
   expect(client.cache.extract()).toEqual({});
 });
@@ -444,7 +448,7 @@ it("shouldn't run queries if ssr is turned to off without suspense", async () =>
       renderFunction: renderToString,
       tree: <UserDetailsWrapper client={client} ssr={false} suspend={false} />,
     })
-  ).resolves.toMatchInlineSnapshot(`"<div>Loading user details</div>"`);
+  ).resolves.toMatchInlineSnapshot(`"No Data (skipped)"`);
 
   expect(client.cache.extract()).toEqual({});
 });
@@ -463,7 +467,7 @@ it('should not require `ApolloProvider` to be the root component with suspense',
         </Root>
       ),
     })
-  ).resolves.toMatchInlineSnapshot(`"<div><div>James</div></div>"`);
+  ).resolves.toMatchInlineSnapshot(`"<div>James</div>"`);
 });
 
 it('should not require `ApolloProvider` to be the root component without suspense', async () => {
@@ -480,5 +484,5 @@ it('should not require `ApolloProvider` to be the root component without suspens
         </Root>
       ),
     })
-  ).resolves.toMatchInlineSnapshot(`"<div><div>James</div></div>"`);
+  ).resolves.toMatchInlineSnapshot(`"<div>James</div>"`);
 });

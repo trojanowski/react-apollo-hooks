@@ -40,11 +40,15 @@ function UserDetails(props: QueryHookOptions<{}>) {
   const { data, loading } = useQuery<UserQueryResult>(USER_QUERY, props);
 
   return (
-    <div>
-      {loading || !data || !data.currentUser
-        ? 'Loading user details'
+    <>
+      {loading
+        ? 'Loading'
+        : !data
+        ? 'No Data'
+        : !data.currentUser
+        ? 'No Current User'
         : data.currentUser.firstName}
-    </div>
+    </>
   );
 }
 
@@ -77,9 +81,7 @@ it('not throws in react-dom with suspense', async () => {
 
   expect(container).toMatchInlineSnapshot(`
 <div>
-  <div>
-    James
-  </div>
+  James
 </div>
 `);
 });
@@ -93,9 +95,7 @@ it('not throws in react-dom without suspense', async () => {
 
   expect(container).toMatchInlineSnapshot(`
 <div>
-  <div>
-    Loading user details
-  </div>
+  Loading
 </div>
 `);
 
@@ -103,9 +103,7 @@ it('not throws in react-dom without suspense', async () => {
 
   expect(container).toMatchInlineSnapshot(`
 <div>
-  <div>
-    James
-  </div>
+  James
 </div>
 `);
 });
@@ -118,7 +116,7 @@ it('not throws in react-dom/server with suspense', async () => {
       renderFunction: renderToString,
       tree: <UserDetailsWrapper client={client} suspend />,
     })
-  ).resolves.toMatchInlineSnapshot(`"<div>James</div>"`);
+  ).resolves.toMatchInlineSnapshot(`"James"`);
 });
 
 it('not throws in react-dom/server without suspense', async () => {
@@ -129,5 +127,5 @@ it('not throws in react-dom/server without suspense', async () => {
       renderFunction: renderToString,
       tree: <UserDetailsWrapper client={client} suspend={false} />,
     })
-  ).resolves.toMatchInlineSnapshot(`"<div>James</div>"`);
+  ).resolves.toMatchInlineSnapshot(`"James"`);
 });
