@@ -6,6 +6,7 @@ import * as React from 'react';
 import { renderToString } from 'react-dom/server';
 
 import { ApolloProvider } from '../ApolloContext';
+import { TestErrorBoundary } from '../__testutils__/TestErrorBoundary';
 import createClient from '../__testutils__/createClient';
 import { getMarkupFromTree } from '../getMarkupFromTree';
 import { QueryHookOptions, useQuery } from '../useQuery';
@@ -82,9 +83,11 @@ interface UserWrapperProps extends QueryHookOptions<{}> {
 
 function UserDetailsWrapper({ client, ...props }: UserWrapperProps) {
   return (
-    <ApolloProvider client={client}>
-      <UserDetails {...props} />
-    </ApolloProvider>
+    <TestErrorBoundary>
+      <ApolloProvider client={client}>
+        <UserDetails {...props} />
+      </ApolloProvider>
+    </TestErrorBoundary>
   );
 }
 
@@ -339,6 +342,21 @@ it('should handle errors thrown by queries with suspense', async () => {
 it('should handle errors thrown by queries without suspense', async () => {
   const client = createMockClient(linkReturningError);
   const tree = <UserDetailsWrapper client={client} suspend={false} />;
+
+  await expect(
+    getMarkupFromTree({ tree, renderFunction: renderToString })
+  ).rejects.toMatchInlineSnapshot(
+    `[Error: Network error: Simulating network error]`
+  );
+
+  expect(renderToString(tree)).toMatchInlineSnapshot(
+    `"No Current User (failed)"`
+  );
+});
+
+it('should handle errors thrown by queries with suspense', async () => {
+  const client = createMockClient(linkReturningError);
+  const tree = <UserDetailsWrapper client={client} suspend />;
 
   await expect(
     getMarkupFromTree({ tree, renderFunction: renderToString })
