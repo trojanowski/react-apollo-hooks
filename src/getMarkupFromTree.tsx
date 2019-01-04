@@ -1,5 +1,6 @@
 import * as React from 'react';
 import { SSRContext, createSSRManager } from './internal/SSRContext';
+import { isPromiseLike } from './utils';
 
 export interface GetMarkupFromTreeOptions {
   tree: React.ReactNode;
@@ -13,12 +14,20 @@ export function getMarkupFromTree({
   const ssrManager = createSSRManager();
 
   function process(): string | Promise<string> {
-    const html = renderFunction(
-      <SSRContext.Provider value={ssrManager}>{tree}</SSRContext.Provider>
-    );
+    try {
+      const html = renderFunction(
+        <SSRContext.Provider value={ssrManager}>{tree}</SSRContext.Provider>
+      );
 
-    if (!ssrManager.hasPromises()) {
-      return html;
+      if (!ssrManager.hasPromises()) {
+        return html;
+      }
+    } catch (e) {
+      if (!isPromiseLike(e)) {
+        throw e;
+      }
+
+      ssrManager.register(e);
     }
 
     return ssrManager.consumeAndAwaitPromises().then(process);

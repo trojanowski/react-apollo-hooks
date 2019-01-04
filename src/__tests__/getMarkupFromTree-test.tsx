@@ -55,19 +55,13 @@ function createMockClient(link?: ApolloLink) {
 }
 
 function useAuthDetails(options?: QueryHookOptions<{}>) {
-  const { data, loading } = useQuery<AuthQueryResult>(AUTH_QUERY, {
-    ...options,
-    suspend: false,
-  });
+  const { data, loading } = useQuery<AuthQueryResult>(AUTH_QUERY, options);
 
   return Boolean(!loading && data && data.isAuthorized);
 }
 
 function UserDetails(props: QueryHookOptions<{}>) {
-  const { data, loading } = useQuery<UserQueryResult>(USER_QUERY, {
-    ...props,
-    suspend: false,
-  });
+  const { data, loading } = useQuery<UserQueryResult>(USER_QUERY, props);
 
   return (
     <div>
@@ -90,71 +84,153 @@ function UserDetailsWrapper({ client, ...props }: UserWrapperProps) {
   );
 }
 
-it('should run through all of the queries that want SSR', async () => {
+it('should run through all of the queries that want SSR with suspense', async () => {
   const client = createMockClient();
 
   await expect(
     getMarkupFromTree({
       renderFunction: renderToString,
-      tree: <UserDetailsWrapper client={client} />,
+      tree: <UserDetailsWrapper client={client} suspend />,
     })
   ).resolves.toMatchInlineSnapshot(`"<div>James</div>"`);
 });
 
-it('should allow network-only fetchPolicy as an option and still render prefetched data', () => {
+it('should run through all of the queries that want SSR without suspense', async () => {
   const client = createMockClient();
 
-  return expect(
+  await expect(
     getMarkupFromTree({
       renderFunction: renderToString,
-      tree: <UserDetailsWrapper client={client} fetchPolicy="network-only" />,
+      tree: <UserDetailsWrapper client={client} suspend={false} />,
     })
   ).resolves.toMatchInlineSnapshot(`"<div>James</div>"`);
 });
 
-it('should allow cache-and-network fetchPolicy as an option and still render prefetched data', () => {
+it('should allow network-only fetchPolicy as an option and still render prefetched data with suspense', async () => {
   const client = createMockClient();
 
-  return expect(
+  await expect(
     getMarkupFromTree({
       renderFunction: renderToString,
       tree: (
-        <UserDetailsWrapper client={client} fetchPolicy="cache-and-network" />
+        <UserDetailsWrapper
+          client={client}
+          suspend
+          fetchPolicy="network-only"
+        />
       ),
     })
   ).resolves.toMatchInlineSnapshot(`"<div>James</div>"`);
 });
 
-it('should pick up queries deep in the render tree', () => {
+it('should allow network-only fetchPolicy as an option and still render prefetched data without suspense', async () => {
+  const client = createMockClient();
+
+  await expect(
+    getMarkupFromTree({
+      renderFunction: renderToString,
+      tree: (
+        <UserDetailsWrapper
+          client={client}
+          suspend={false}
+          fetchPolicy="network-only"
+        />
+      ),
+    })
+  ).resolves.toMatchInlineSnapshot(`"<div>James</div>"`);
+});
+
+it('should allow cache-and-network fetchPolicy as an option and still render prefetched data with suspense', async () => {
+  const client = createMockClient();
+
+  await expect(
+    getMarkupFromTree({
+      renderFunction: renderToString,
+      tree: (
+        <UserDetailsWrapper
+          client={client}
+          suspend
+          fetchPolicy="cache-and-network"
+        />
+      ),
+    })
+  ).resolves.toMatchInlineSnapshot(`"<div>James</div>"`);
+});
+
+it('should allow cache-and-network fetchPolicy as an option and still render prefetched data without suspense', async () => {
+  const client = createMockClient();
+
+  await expect(
+    getMarkupFromTree({
+      renderFunction: renderToString,
+      tree: (
+        <UserDetailsWrapper
+          client={client}
+          suspend={false}
+          fetchPolicy="cache-and-network"
+        />
+      ),
+    })
+  ).resolves.toMatchInlineSnapshot(`"<div>James</div>"`);
+});
+
+it('should pick up queries deep in the render tree with suspense', async () => {
   const client = createMockClient();
 
   const Container = () => (
     <div>
       <span>Hi</span>
       <div>
-        <UserDetailsWrapper client={client} fetchPolicy="cache-and-network" />
+        <UserDetailsWrapper
+          client={client}
+          suspend
+          fetchPolicy="cache-and-network"
+        />
       </div>
     </div>
   );
 
-  return expect(
+  await expect(
     getMarkupFromTree({ renderFunction: renderToString, tree: <Container /> })
   ).resolves.toMatchInlineSnapshot(
     `"<div><span>Hi</span><div><div>James</div></div></div>"`
   );
 });
 
-it('should handle nested queries that depend on each other', () => {
+it('should pick up queries deep in the render tree without suspense', async () => {
+  const client = createMockClient();
+
+  const Container = () => (
+    <div>
+      <span>Hi</span>
+      <div>
+        <UserDetailsWrapper
+          client={client}
+          suspend={false}
+          fetchPolicy="cache-and-network"
+        />
+      </div>
+    </div>
+  );
+
+  await expect(
+    getMarkupFromTree({ renderFunction: renderToString, tree: <Container /> })
+  ).resolves.toMatchInlineSnapshot(
+    `"<div><span>Hi</span><div><div>James</div></div></div>"`
+  );
+});
+
+it('should handle nested queries that depend on each other with suspense', async () => {
   const client = createMockClient();
 
   const AuthorizedUser = () => {
-    const authorized = useAuthDetails();
+    const authorized = useAuthDetails({ suspend: true });
 
     return (
       <div>
         <div>Authorized: {String(authorized)}</div>
 
-        <UserDetails skip={!authorized} />
+        <UserDetails suspend skip={!authorized} />
       </div>
     );
   };
@@ -167,14 +243,50 @@ it('should handle nested queries that depend on each other', () => {
     );
   };
 
-  return expect(
-    getMarkupFromTree({ renderFunction: renderToString, tree: <Container /> })
+  await expect(
+    getMarkupFromTree({
+      renderFunction: renderToString,
+      tree: <Container />,
+    })
   ).resolves.toMatchInlineSnapshot(
     `"<div><div>Authorized: <!-- -->true</div><div>James</div></div>"`
   );
 });
 
-it('should return the first of multiple errors thrown by nested wrapped components', () => {
+it('should handle nested queries that depend on each other without suspense', async () => {
+  const client = createMockClient();
+
+  const AuthorizedUser = () => {
+    const authorized = useAuthDetails({ suspend: false });
+
+    return (
+      <div>
+        <div>Authorized: {String(authorized)}</div>
+
+        <UserDetails suspend={false} skip={!authorized} />
+      </div>
+    );
+  };
+
+  const Container = () => {
+    return (
+      <ApolloProvider client={client}>
+        <AuthorizedUser />
+      </ApolloProvider>
+    );
+  };
+
+  await expect(
+    getMarkupFromTree({
+      renderFunction: renderToString,
+      tree: <Container />,
+    })
+  ).resolves.toMatchInlineSnapshot(
+    `"<div><div>Authorized: <!-- -->true</div><div>James</div></div>"`
+  );
+});
+
+it('should return the first of multiple errors thrown by nested wrapped components', async () => {
   const client = createMockClient();
 
   const fooError = new Error('foo');
@@ -182,24 +294,32 @@ it('should return the first of multiple errors thrown by nested wrapped componen
     throw fooError;
   };
 
-  const Container = () => {
-    return (
-      <div>
-        <UserDetailsWrapper client={client} />
-        <BorkedComponent />
-        <BorkedComponent />
-      </div>
-    );
-  };
+  const Container = (props: QueryHookOptions<{}>) => (
+    <div>
+      <UserDetailsWrapper {...props} client={client} />
+      <BorkedComponent />
+      <BorkedComponent />
+    </div>
+  );
 
-  return expect(
-    getMarkupFromTree({ renderFunction: renderToString, tree: <Container /> })
+  await expect(
+    getMarkupFromTree({
+      renderFunction: renderToString,
+      tree: <Container suspend />,
+    })
+  ).rejects.toBe(fooError);
+
+  await expect(
+    getMarkupFromTree({
+      renderFunction: renderToString,
+      tree: <Container suspend={false} />,
+    })
   ).rejects.toBe(fooError);
 });
 
-it('should handle errors thrown by queries', async () => {
+it('should handle errors thrown by queries with suspense', async () => {
   const client = createMockClient(linkReturningError);
-  const tree = <UserDetailsWrapper client={client} />;
+  const tree = <UserDetailsWrapper client={client} suspend />;
 
   await expect(
     getMarkupFromTree({ tree, renderFunction: renderToString })
@@ -212,25 +332,53 @@ it('should handle errors thrown by queries', async () => {
   );
 });
 
-it('should correctly skip queries', async () => {
+it('should handle errors thrown by queries without suspense', async () => {
+  const client = createMockClient(linkReturningError);
+  const tree = <UserDetailsWrapper client={client} suspend={false} />;
+
+  await expect(
+    getMarkupFromTree({ tree, renderFunction: renderToString })
+  ).rejects.toMatchInlineSnapshot(
+    `[Error: Network error: Simulating network error]`
+  );
+
+  expect(renderToString(tree)).toMatchInlineSnapshot(
+    `"<div>Loading user details</div>"`
+  );
+});
+
+it('should correctly skip queries with suspense', async () => {
   const client = createMockClient();
 
   await expect(
     getMarkupFromTree({
       renderFunction: renderToString,
-      tree: <UserDetailsWrapper client={client} skip />,
+      tree: <UserDetailsWrapper client={client} skip suspend />,
     })
   ).resolves.toMatchInlineSnapshot(`"<div>Loading user details</div>"`);
 
   expect(client.cache.extract()).toEqual({});
 });
 
-it('should use the correct default props for a query', async () => {
+it('should correctly skip queries without suspense', async () => {
+  const client = createMockClient();
+
+  await expect(
+    getMarkupFromTree({
+      renderFunction: renderToString,
+      tree: <UserDetailsWrapper client={client} skip suspend={false} />,
+    })
+  ).resolves.toMatchInlineSnapshot(`"<div>Loading user details</div>"`);
+
+  expect(client.cache.extract()).toEqual({});
+});
+
+it('should use the correct default props for a query with suspense', async () => {
   const client = createMockClient();
 
   await getMarkupFromTree({
     renderFunction: renderToString,
-    tree: <UserDetailsWrapper client={client} />,
+    tree: <UserDetailsWrapper client={client} suspend />,
   });
 
   expect(client.cache.extract()).toMatchInlineSnapshot(`
@@ -250,20 +398,58 @@ Object {
 `);
 });
 
-it("shouldn't run queries if ssr is turned to off", async () => {
+it('should use the correct default props for a query without suspense', async () => {
+  const client = createMockClient();
+
+  await getMarkupFromTree({
+    renderFunction: renderToString,
+    tree: <UserDetailsWrapper client={client} suspend={false} />,
+  });
+
+  expect(client.cache.extract()).toMatchInlineSnapshot(`
+Object {
+  "$ROOT_QUERY.currentUser": Object {
+    "firstName": "James",
+  },
+  "ROOT_QUERY": Object {
+    "currentUser": Object {
+      "generated": true,
+      "id": "$ROOT_QUERY.currentUser",
+      "type": "id",
+      "typename": undefined,
+    },
+  },
+}
+`);
+});
+
+it("shouldn't run queries if ssr is turned to off with suspense", async () => {
   const client = createMockClient();
 
   await expect(
     getMarkupFromTree({
       renderFunction: renderToString,
-      tree: <UserDetailsWrapper client={client} ssr={false} />,
+      tree: <UserDetailsWrapper client={client} ssr={false} suspend />,
     })
   ).resolves.toMatchInlineSnapshot(`"<div>Loading user details</div>"`);
 
   expect(client.cache.extract()).toEqual({});
 });
 
-it('should not require `ApolloProvider` to be the root component', () => {
+it("shouldn't run queries if ssr is turned to off without suspense", async () => {
+  const client = createMockClient();
+
+  await expect(
+    getMarkupFromTree({
+      renderFunction: renderToString,
+      tree: <UserDetailsWrapper client={client} ssr={false} suspend={false} />,
+    })
+  ).resolves.toMatchInlineSnapshot(`"<div>Loading user details</div>"`);
+
+  expect(client.cache.extract()).toEqual({});
+});
+
+it('should not require `ApolloProvider` to be the root component with suspense', async () => {
   const client = createMockClient();
 
   const Root = (props: { children: React.ReactNode }) => <div {...props} />;
@@ -273,7 +459,24 @@ it('should not require `ApolloProvider` to be the root component', () => {
       renderFunction: renderToString,
       tree: (
         <Root>
-          <UserDetailsWrapper client={client} />
+          <UserDetailsWrapper client={client} suspend />
+        </Root>
+      ),
+    })
+  ).resolves.toMatchInlineSnapshot(`"<div><div>James</div></div>"`);
+});
+
+it('should not require `ApolloProvider` to be the root component without suspense', async () => {
+  const client = createMockClient();
+
+  const Root = (props: { children: React.ReactNode }) => <div {...props} />;
+
+  return expect(
+    getMarkupFromTree({
+      renderFunction: renderToString,
+      tree: (
+        <Root>
+          <UserDetailsWrapper client={client} suspend={false} />
         </Root>
       ),
     })

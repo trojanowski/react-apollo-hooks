@@ -2,12 +2,12 @@ import { createContext } from 'react';
 
 export interface SSRManager {
   hasPromises(): boolean;
-  register(promise: Promise<any>): void;
+  register(promise: PromiseLike<any>): void;
   consumeAndAwaitPromises(): Promise<any>;
 }
 
 export function createSSRManager(): SSRManager {
-  const promiseSet = new Set<Promise<any>>();
+  const promiseSet = new Set<PromiseLike<any>>();
 
   return {
     hasPromises: () => promiseSet.size > 0,
