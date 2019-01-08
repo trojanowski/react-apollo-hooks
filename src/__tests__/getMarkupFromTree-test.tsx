@@ -6,7 +6,6 @@ import * as React from 'react';
 import { renderToString } from 'react-dom/server';
 
 import { ApolloProvider } from '../ApolloContext';
-import { TestErrorBoundary } from '../__testutils__/TestErrorBoundary';
 import createClient from '../__testutils__/createClient';
 import { getMarkupFromTree } from '../getMarkupFromTree';
 import { QueryHookOptions, useQuery } from '../useQuery';
@@ -83,11 +82,9 @@ interface UserWrapperProps extends QueryHookOptions<{}> {
 
 function UserDetailsWrapper({ client, ...props }: UserWrapperProps) {
   return (
-    <TestErrorBoundary>
-      <ApolloProvider client={client}>
-        <UserDetails {...props} />
-      </ApolloProvider>
-    </TestErrorBoundary>
+    <ApolloProvider client={client}>
+      <UserDetails {...props} />
+    </ApolloProvider>
   );
 }
 
