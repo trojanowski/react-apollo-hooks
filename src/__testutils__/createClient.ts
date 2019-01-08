@@ -4,6 +4,8 @@ import { ApolloLink } from 'apollo-link';
 import { MockLink, MockedResponse } from 'apollo-link-mock';
 
 interface CreateClientOptions {
+  readonly addTypename?: boolean;
+
   readonly link?: ApolloLink;
   readonly mocks?: ReadonlyArray<MockedResponse>;
 }
@@ -11,9 +13,10 @@ interface CreateClientOptions {
 export default function createClient({
   link,
   mocks = [],
+  addTypename = true,
 }: CreateClientOptions = {}) {
   return new ApolloClient({
-    cache: new InMemoryCache(),
+    cache: new InMemoryCache({ addTypename }),
     link: link ? link : new MockLink(mocks),
   });
 }

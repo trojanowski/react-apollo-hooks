@@ -14,3 +14,7 @@ export function objToKey<T extends Record<string, any>>(obj: T): T | string {
     }, {});
   return JSON.stringify(sortedObj);
 }
+
+export function isPromiseLike<T>(value: unknown): value is PromiseLike<T> {
+  return value != null && typeof (value as PromiseLike<T>).then === 'function';
+}

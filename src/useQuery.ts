@@ -10,8 +10,9 @@ import {
   WatchQueryOptions,
 } from 'apollo-client';
 import { DocumentNode } from 'graphql';
-import { useEffect, useMemo, useState } from 'react';
+import { useContext, useEffect, useMemo, useState } from 'react';
 import { useApolloClient } from './ApolloContext';
+import { SSRContext } from './internal/SSRContext';
 import {
   getCachedObservableQuery,
   invalidateCachedObservableQuery,
@@ -32,6 +33,7 @@ export interface QueryHookOptions<TVariables>
   notifyOnNetworkStatusChange?: boolean;
   pollInterval?: number;
   // custom options of `useQuery` hook
+  ssr?: boolean;
   skip?: boolean;
   suspend?: boolean;
 }
@@ -52,6 +54,7 @@ export function useQuery<TData = any, TVariables = OperationVariables>(
   query: DocumentNode,
   {
     // Hook options
+    ssr = true,
     skip = false,
     suspend = true,
 
@@ -63,12 +66,24 @@ export function useQuery<TData = any, TVariables = OperationVariables>(
     context,
     metadata,
     variables,
-    fetchPolicy,
+    fetchPolicy: actualCachePolicy,
     errorPolicy,
     fetchResults,
   }: QueryHookOptions<TVariables> = {}
 ): QueryHookResult<TData, TVariables> {
   const client = useApolloClient();
+  const ssrManager = useContext(SSRContext);
+  const ssrInUse = ssr && ssrManager;
+
+  // Skips when `skip: true` or SSRContext passed but `ssr: false`
+  const shouldSkip = skip || (ssrManager != null && !ssr);
+  const fetchPolicy =
+    ssrInUse &&
+    // Taken from https://github.com/apollographql/react-apollo/blob/2d7e48b7d0c26e792e1ed26e98bb84d8fba5bb8a/src/Query.tsx#L167-L169
+    (actualCachePolicy === 'network-only' ||
+      actualCachePolicy === 'cache-and-network')
+      ? 'cache-first'
+      : actualCachePolicy;
 
   const watchQueryOptions: WatchQueryOptions<TVariables> = useMemo(
     () => ({
@@ -117,12 +132,12 @@ export function useQuery<TData = any, TVariables = OperationVariables>(
         partial: result.partial,
       };
     },
-    [skip, responseId, observableQuery]
+    [shouldSkip, responseId, observableQuery]
   );
 
   useEffect(
     () => {
-      if (skip) {
+      if (shouldSkip) {
         return;
       }
 
@@ -138,7 +153,7 @@ export function useQuery<TData = any, TVariables = OperationVariables>(
         subscription.unsubscribe();
       };
     },
-    [skip, observableQuery]
+    [shouldSkip, observableQuery]
   );
 
   ensureSupportedFetchPolicy(suspend, fetchPolicy);
@@ -151,7 +166,7 @@ export function useQuery<TData = any, TVariables = OperationVariables>(
     updateQuery: observableQuery.updateQuery.bind(observableQuery),
   };
 
-  if (skip) {
+  if (shouldSkip) {
     // Taken from https://github.com/apollographql/react-apollo/blob/5cb63b3625ce5e4a3d3e4ba132eaec2a38ef5d90/src/Query.tsx#L376-L381
     return {
       ...helpers,
@@ -161,10 +176,16 @@ export function useQuery<TData = any, TVariables = OperationVariables>(
     };
   }
 
-  if (suspend && currentResult.partial) {
-    // throw a promise - use the react suspense to wait until the data is
-    // available
-    throw observableQuery.result();
+  if (currentResult.partial) {
+    if (suspend) {
+      // throw a promise - use the react suspense to wait until the data is
+      // available
+      throw observableQuery.result();
+    }
+
+    if (ssrInUse) {
+      ssrManager!.register(observableQuery.result());
+    }
   }
 
   return { ...helpers, ...currentResult };
