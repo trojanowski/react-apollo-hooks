@@ -66,66 +66,45 @@ function UserDetailsWrapper({ client, ...props }: UserWrapperProps) {
   );
 }
 
-it('not throws in react-dom with suspense', async () => {
-  const client = createMockClient();
+describe.each([[true], [false]])('SuspenseSSR with "suspend: %s"', suspend => {
+  it('not throws in react-dom', async () => {
+    const client = createMockClient();
 
-  const { container } = render(<UserDetailsWrapper client={client} suspend />);
+    const { container } = render(
+      <UserDetailsWrapper client={client} suspend={suspend} />
+    );
 
-  expect(container).toMatchInlineSnapshot(`
+    if (suspend) {
+      expect(container).toMatchInlineSnapshot(`
 <div>
   Loading with suspense
 </div>
 `);
-
-  await flushEffectsAndWait();
-
-  expect(container).toMatchInlineSnapshot(`
-<div>
-  James
-</div>
-`);
-});
-
-it('not throws in react-dom without suspense', async () => {
-  const client = createMockClient();
-
-  const { container } = render(
-    <UserDetailsWrapper client={client} suspend={false} />
-  );
-
-  expect(container).toMatchInlineSnapshot(`
+    } else {
+      expect(container).toMatchInlineSnapshot(`
 <div>
   Loading
 </div>
 `);
+    }
 
-  await flushEffectsAndWait();
+    await flushEffectsAndWait();
 
-  expect(container).toMatchInlineSnapshot(`
+    expect(container).toMatchInlineSnapshot(`
 <div>
   James
 </div>
 `);
-});
+  });
 
-it('not throws in react-dom/server with suspense', async () => {
-  const client = createMockClient();
+  it('not throws in react-dom/server', async () => {
+    const client = createMockClient();
 
-  await expect(
-    getMarkupFromTree({
-      renderFunction: renderToString,
-      tree: <UserDetailsWrapper client={client} suspend />,
-    })
-  ).resolves.toMatchInlineSnapshot(`"James"`);
-});
-
-it('not throws in react-dom/server without suspense', async () => {
-  const client = createMockClient();
-
-  await expect(
-    getMarkupFromTree({
-      renderFunction: renderToString,
-      tree: <UserDetailsWrapper client={client} suspend={false} />,
-    })
-  ).resolves.toMatchInlineSnapshot(`"James"`);
+    await expect(
+      getMarkupFromTree({
+        renderFunction: renderToString,
+        tree: <UserDetailsWrapper client={client} suspend={suspend} />,
+      })
+    ).resolves.toMatchInlineSnapshot(`"James"`);
+  });
 });
