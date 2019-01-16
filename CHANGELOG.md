@@ -2,6 +2,34 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+<a name="0.3.0"></a>
+# [0.3.0](https://github.com/trojanowski/react-apollo-hooks/compare/v0.2.1...v0.3.0) (2019-01-16)
+
+
+### Bug Fixes
+
+* update React peer dependency ([51b3435](https://github.com/trojanowski/react-apollo-hooks/commit/51b3435))
+
+
+### Code Refactoring
+
+* Rewrite in TypeScript. ([#39](https://github.com/trojanowski/react-apollo-hooks/issues/39)) ([055f0e2](https://github.com/trojanowski/react-apollo-hooks/commit/055f0e2))
+
+
+### Features
+
+* **useQuery:** implement `skip` ([#42](https://github.com/trojanowski/react-apollo-hooks/issues/42)) ([873e7de](https://github.com/trojanowski/react-apollo-hooks/commit/873e7de))
+* **useQuery:** use Apollo client state as the main source of truth ([#47](https://github.com/trojanowski/react-apollo-hooks/issues/47)) ([5ed243d](https://github.com/trojanowski/react-apollo-hooks/commit/5ed243d))
+* implement SSR ([#44](https://github.com/trojanowski/react-apollo-hooks/issues/44)) ([664edc2](https://github.com/trojanowski/react-apollo-hooks/commit/664edc2))
+
+
+### BREAKING CHANGES
+
+* minimum supported (and tested) version of React is now 16.8.0-alpha.1
+* `useApolloClient` throws if the client is not available in the context instead of returning null
+
+
+
 <a name="0.2.1"></a>
 ## [0.2.1](https://github.com/trojanowski/react-apollo-hooks/compare/v0.2.0...v0.2.1) (2018-11-30)
 
