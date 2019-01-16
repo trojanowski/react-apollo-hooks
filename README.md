@@ -223,3 +223,60 @@ const MyComponent = () => {
 
 An example showing how to test components using react-apollo-hooks:
 <https://github.com/trojanowski/react-apollo-hooks-sample-test>
+
+# Server-side rendering
+
+react-apollo-hooks supports server-side rendering with the `getMarkupFromTree`
+function. Example usage:
+
+```javascript
+import express from 'express';
+import { ApolloProvider, getMarkupFromTree } from 'react-apollo-hooks';
+import { renderToString } from 'react-dom/server';
+
+const HELLO_QUERY = gql`
+  query HelloQuery {
+    hello
+  }
+`;
+
+function Hello() {
+  const { data } = useQuery(HELLO_QUERY);
+
+  return <p>{data.message}</p>;
+}
+
+const app = express();
+
+app.get('/', async (req, res) => {
+  const client = createYourApolloClient();
+  const renderedHtml = await getMarkupFromTree({
+    renderFunction: renderToString,
+    tree: (
+      <ApolloProvider client={client}>
+        <Hello />
+      </ApolloProvider>
+    ),
+  });
+  res.send(renderedHtml);
+});
+```
+
+`getMarkupFromTree` supports `useQuery` hooks invoked in both suspense
+and non-suspense mode, but the [React.Suspense](https://reactjs.org/docs/react-api.html#reactsuspense)
+component is not supported. You can use `unstable_SuspenseSSR` provided
+by this library instead:
+
+```javascript
+import { unstable_SuspenseSSR } from 'react-apollo-hooks';
+
+function MyComponent() {
+  return (
+    <unstable_SuspenseSSR fallback={<Spinner />}>
+      <div>
+        <ComponentWithGraphqlQuery />
+      </div>
+    </unstable_SuspenseSSR>
+  );
+}
+```
