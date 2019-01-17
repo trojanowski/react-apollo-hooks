@@ -128,8 +128,9 @@ export function useQuery<TData = any, TVariables = OperationVariables>(
       return {
         data: result.data as TData,
         error:
-          result.error ||
-          (result.errors && new ApolloError({ graphQLErrors: result.errors })),
+          result.errors && result.errors.length > 0
+            ? new ApolloError({ graphQLErrors: result.errors })
+            : result.error,
         loading: result.loading,
         partial: result.partial,
       };
