@@ -60,7 +60,7 @@ export function useQuery<TData = any, TVariables = OperationVariables>(
 
     // Watch options
     pollInterval,
-    notifyOnNetworkStatusChange,
+    notifyOnNetworkStatusChange = false,
 
     // Apollo client options
     context,
