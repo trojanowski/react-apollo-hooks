@@ -1,5 +1,6 @@
 import {
   ApolloCurrentResult,
+  ApolloError,
   ApolloQueryResult,
   FetchMoreOptions,
   FetchMoreQueryOptions,
@@ -22,7 +23,7 @@ import { Omit, objToKey } from './utils';
 export interface QueryHookState<TData>
   extends Pick<
     ApolloCurrentResult<undefined | TData>,
-    'error' | 'errors' | 'loading' | 'partial'
+    'error' | 'loading' | 'partial'
   > {
   data?: TData;
 }
@@ -126,8 +127,9 @@ export function useQuery<TData = any, TVariables = OperationVariables>(
 
       return {
         data: result.data as TData,
-        error: result.error,
-        errors: result.errors,
+        error:
+          result.error ||
+          (result.errors && new ApolloError({ graphQLErrors: result.errors })),
         loading: result.loading,
         partial: result.partial,
       };
