@@ -5,7 +5,7 @@ Use [Apollo Client](https://github.com/apollographql/apollo-client) as React
 
 _Warning: Hooks are currently a React
 [RFC](https://github.com/reactjs/rfcs/pull/68) and **not ready for production**.
-Use at minimum `react@16.7.0-alpha.2` to use this package._
+Use at minimum `react@16.8.0-alpha.1` to use this package._
 
 [![CircleCI](https://circleci.com/gh/trojanowski/react-apollo-hooks.svg?style=svg)](https://circleci.com/gh/trojanowski/react-apollo-hooks)
 
