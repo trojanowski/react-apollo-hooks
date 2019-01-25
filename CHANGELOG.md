@@ -8,7 +8,8 @@ All notable changes to this project will be documented in this file. See [standa
 
 ### Bug Fixes
 
-* notifyOnNetworkStatusChange default to false ([#61](https://github.com/trojanowski/react-apollo-hooks/issues/61)) ([4da7d2d](https://github.com/trojanowski/react-apollo-hooks/commit/4da7d2d)), closes [/github.com/apollographql/apollo-client/blob/3510493a2398f79bf193ab7579bbda87081cffcc/packages/apollo-client/src/core/QueryManager.ts#L658](https://github.com//github.com/apollographql/apollo-client/blob/3510493a2398f79bf193ab7579bbda87081cffcc/packages/apollo-client/src/core/QueryManager.ts/issues/L658) [#59](https://github.com/trojanowski/react-apollo-hooks/issues/59)
+
+* notifyOnNetworkStatusChange defaults to false ([#61](https://github.com/trojanowski/react-apollo-hooks/issues/61)) ([4da7d2d](https://github.com/trojanowski/react-apollo-hooks/commit/4da7d2d)), closes [#59](https://github.com/trojanowski/react-apollo-hooks/issues/59)
 
 
 
