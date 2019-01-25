@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+<a name="0.3.1"></a>
+## [0.3.1](https://github.com/trojanowski/react-apollo-hooks/compare/v0.3.0...v0.3.1) (2019-01-25)
+
+
+### Bug Fixes
+
+* notifyOnNetworkStatusChange default to false ([#61](https://github.com/trojanowski/react-apollo-hooks/issues/61)) ([4da7d2d](https://github.com/trojanowski/react-apollo-hooks/commit/4da7d2d)), closes [/github.com/apollographql/apollo-client/blob/3510493a2398f79bf193ab7579bbda87081cffcc/packages/apollo-client/src/core/QueryManager.ts#L658](https://github.com//github.com/apollographql/apollo-client/blob/3510493a2398f79bf193ab7579bbda87081cffcc/packages/apollo-client/src/core/QueryManager.ts/issues/L658) [#59](https://github.com/trojanowski/react-apollo-hooks/issues/59)
+
+
+
 <a name="0.3.0"></a>
 # [0.3.0](https://github.com/trojanowski/react-apollo-hooks/compare/v0.2.1...v0.3.0) (2019-01-16)
 

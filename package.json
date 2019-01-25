@@ -1,6 +1,6 @@
 {
   "name": "react-apollo-hooks",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "description": "",
   "sideEffects": false,
   "main": "lib/index.js",
