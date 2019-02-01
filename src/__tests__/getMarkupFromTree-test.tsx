@@ -2,7 +2,12 @@ import ApolloClient from 'apollo-client';
 import { ApolloLink, Observable } from 'apollo-link';
 import { MockedResponse } from 'apollo-link-mock';
 import gql from 'graphql-tag';
-import * as React from 'react';
+import React, {
+  HTMLAttributes,
+  ReactElement,
+  createContext,
+  useContext,
+} from 'react';
 import { renderToString } from 'react-dom/server';
 
 import { ApolloProvider } from '../ApolloContext';
@@ -305,3 +310,49 @@ Object {
     });
   }
 );
+
+it('runs onBeforeRender', async () => {
+  const client = createMockClient();
+  const context: { headTags: Array<ReactElement<object>> } = { headTags: [] };
+  const Context = createContext(context);
+
+  function Title(props: HTMLAttributes<HTMLTitleElement>) {
+    const ctx = useContext(Context);
+
+    ctx.headTags.push(<title {...props} />);
+
+    return null;
+  }
+
+  let step = 0;
+
+  await getMarkupFromTree({
+    onBeforeRender: () => {
+      switch (++step) {
+        case 1: {
+          // First attempt, nothing happened yet.
+          expect(context.headTags).toHaveLength(0);
+          break;
+        }
+
+        case 2: {
+          // Second attempt, we should have populated context.
+          expect(context.headTags).toHaveLength(1);
+          break;
+        }
+      }
+    },
+    renderFunction: renderToString,
+    tree: (
+      <>
+        <Title>Hello!</Title>
+        <UserDetailsWrapper client={client} />
+      </>
+    ),
+  });
+
+  // Second attempt should create duplicates.
+  expect(context.headTags).toHaveLength(2);
+
+  expect.assertions(3);
+});
