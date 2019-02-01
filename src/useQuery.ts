@@ -4,6 +4,7 @@ import {
   FetchMoreOptions,
   FetchMoreQueryOptions,
   FetchPolicy,
+  NetworkStatus,
   ObservableQuery,
   OperationVariables,
   QueryOptions,
@@ -11,6 +12,8 @@ import {
 } from 'apollo-client';
 import { DocumentNode } from 'graphql';
 import { useContext, useEffect, useMemo, useState } from 'react';
+import { unstable_scheduleCallback } from 'scheduler';
+
 import { useApolloClient } from './ApolloContext';
 import { SSRContext } from './internal/SSRContext';
 import {
@@ -25,6 +28,8 @@ export interface QueryHookState<TData>
     'error' | 'errors' | 'loading' | 'partial'
   > {
   data?: TData;
+  // networkStatus is undefined for skipped queries
+  networkStatus: NetworkStatus | undefined;
 }
 
 export interface QueryHookOptions<TVariables>
@@ -129,6 +134,7 @@ export function useQuery<TData = any, TVariables = OperationVariables>(
         error: result.error,
         errors: result.errors,
         loading: result.loading,
+        networkStatus: result.networkStatus,
         partial: result.partial,
       };
     },
@@ -173,6 +179,7 @@ export function useQuery<TData = any, TVariables = OperationVariables>(
       data: undefined,
       error: undefined,
       loading: false,
+      networkStatus: undefined,
     };
   }
 
@@ -180,7 +187,28 @@ export function useQuery<TData = any, TVariables = OperationVariables>(
     if (suspend) {
       // throw a promise - use the react suspense to wait until the data is
       // available
-      throw observableQuery.result();
+      throw new Promise((resolve, reject) => {
+        const fakeSubscription = observableQuery.subscribe(() => {
+          // empty
+        });
+        const unsubscribe = () => {
+          unstable_scheduleCallback(() => {
+            setTimeout(() => {
+              fakeSubscription.unsubscribe();
+            });
+          });
+        };
+        observableQuery.result().then(
+          result => {
+            resolve(result);
+            unsubscribe();
+          },
+          error => {
+            reject(error);
+            unsubscribe();
+          }
+        );
+      });
     }
 
     if (ssrInUse) {

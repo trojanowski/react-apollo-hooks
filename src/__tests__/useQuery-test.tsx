@@ -1,13 +1,13 @@
-import { ApolloClient } from 'apollo-client';
+import { ApolloClient, NetworkStatus } from 'apollo-client';
 import { ApolloLink, DocumentNode, Observable } from 'apollo-link';
 import gql from 'graphql-tag';
 import { withProfiler } from 'jest-react-profiler';
 import React, { Fragment, Suspense, SuspenseProps } from 'react';
-import { cleanup, render } from 'react-testing-library';
+import { cleanup, fireEvent, render } from 'react-testing-library';
 
 import { ApolloProvider, QueryHookOptions, useQuery } from '..';
 import createClient from '../__testutils__/createClient';
-import { SAMPLE_TASKS } from '../__testutils__/data';
+import { MORE_TASKS, SAMPLE_TASKS } from '../__testutils__/data';
 import flushEffectsAndWait from '../__testutils__/flushEffectsAndWait';
 import noop from '../__testutils__/noop';
 
@@ -81,6 +81,28 @@ const TASKS_MOCKS = [
       },
     },
   },
+
+  {
+    request: {
+      query: gql`
+        query FetchMoreTasksQuery {
+          moreTasks {
+            id
+            text
+            completed
+            __typename
+          }
+        }
+      `,
+      variables: {},
+    },
+    result: {
+      data: {
+        __typename: 'Query',
+        tasks: [...MORE_TASKS],
+      },
+    },
+  },
 ];
 
 const TASKS_QUERY = gql`
@@ -115,7 +137,9 @@ function createMockClient(link?: ApolloLink) {
 }
 
 interface TasksProps<TVariables = any> extends QueryHookOptions<TVariables> {
+  onNetworkStatus?: (networkStatus?: NetworkStatus) => void;
   query: DocumentNode;
+  showFetchMore?: boolean;
 }
 
 function TaskList({ tasks }: { tasks: Array<{ id: number; text: string }> }) {
@@ -128,8 +152,20 @@ function TaskList({ tasks }: { tasks: Array<{ id: number; text: string }> }) {
   );
 }
 
-function Tasks({ query, ...options }: TasksProps) {
-  const { data, error, errors, loading } = useQuery(query, options);
+function Tasks({
+  onNetworkStatus,
+  query,
+  showFetchMore,
+  ...options
+}: TasksProps) {
+  const { data, error, errors, fetchMore, loading, ...rest } = useQuery(
+    query,
+    options
+  );
+
+  if (onNetworkStatus) {
+    onNetworkStatus(rest.networkStatus);
+  }
 
   if (error) {
     return <>{error.message}</>;
@@ -153,7 +189,38 @@ function Tasks({ query, ...options }: TasksProps) {
     return <>Skipped loading of data</>;
   }
 
-  return <TaskList tasks={data.tasks} />;
+  return (
+    <>
+      <TaskList tasks={data.tasks} />
+      {showFetchMore && (
+        <button
+          data-testid="fetch-more"
+          onClick={() => {
+            fetchMore({
+              query: gql`
+                query FetchMoreTasksQuery {
+                  moreTasks {
+                    id
+                    text
+                    completed
+                  }
+                }
+              `,
+              updateQuery(previousResult, { fetchMoreResult }) {
+                const result = {
+                  ...previousResult,
+                  tasks: [...previousResult.tasks, ...fetchMoreResult.tasks],
+                };
+                return result;
+              },
+            });
+          }}
+        >
+          Fetch more
+        </button>
+      )}
+    </>
+  );
 }
 
 interface TasksWrapperProps extends TasksProps {
@@ -752,4 +819,114 @@ it('starts skipped query in non-suspense mode', async () => {
   </ul>
 </div>
 `);
+});
+
+it('should forward `networkStatus`', async () => {
+  const client = createMockClient();
+  const onNetworkStatusSpy = jest.fn();
+
+  render(
+    <TasksWrapper
+      client={client}
+      onNetworkStatus={onNetworkStatusSpy}
+      query={TASKS_QUERY}
+    />
+  );
+
+  expect(onNetworkStatusSpy.mock.calls).toEqual([]);
+  await flushEffectsAndWait();
+  expect(onNetworkStatusSpy.mock.calls).toEqual([
+    [NetworkStatus.ready],
+    [NetworkStatus.ready],
+  ]);
+});
+
+it('should forward `networkStatus` in non-suspense mode', async () => {
+  const client = createMockClient();
+  const onNetworkStatusSpy = jest.fn();
+
+  render(
+    <TasksWrapper
+      client={client}
+      onNetworkStatus={onNetworkStatusSpy}
+      query={TASKS_QUERY}
+      suspend={false}
+    />
+  );
+
+  expect(onNetworkStatusSpy.mock.calls).toEqual([[NetworkStatus.loading]]);
+  await flushEffectsAndWait();
+  expect(onNetworkStatusSpy.mock.calls).toEqual([
+    [NetworkStatus.loading],
+    [NetworkStatus.ready],
+  ]);
+});
+
+it('should forward `networkStatus` when `fetchMore` is used', async () => {
+  const client = createMockClient();
+  const onNetworkStatusSpy = jest.fn();
+
+  const { getByTestId } = render(
+    <TasksWrapper
+      client={client}
+      notifyOnNetworkStatusChange
+      onNetworkStatus={onNetworkStatusSpy}
+      query={TASKS_QUERY}
+      showFetchMore
+    />
+  );
+
+  expect(onNetworkStatusSpy.mock.calls).toEqual([]);
+  await flushEffectsAndWait();
+  expect(onNetworkStatusSpy.mock.calls).toEqual([
+    [NetworkStatus.ready],
+    [NetworkStatus.ready],
+  ]);
+
+  onNetworkStatusSpy.mockClear();
+
+  const fetchMoreButton = getByTestId('fetch-more');
+  fireEvent.click(fetchMoreButton);
+  await flushEffectsAndWait();
+
+  expect(onNetworkStatusSpy.mock.calls).toEqual([
+    [NetworkStatus.fetchMore],
+    [NetworkStatus.ready],
+    [NetworkStatus.ready],
+  ]);
+});
+
+it('should forward `networkStatus` in non-suspense mode when `fetchMore` is used', async () => {
+  const client = createMockClient();
+  const onNetworkStatusSpy = jest.fn();
+
+  const { getByTestId } = render(
+    <TasksWrapper
+      client={client}
+      notifyOnNetworkStatusChange
+      onNetworkStatus={onNetworkStatusSpy}
+      query={TASKS_QUERY}
+      showFetchMore
+      suspend={false}
+    />
+  );
+
+  expect(onNetworkStatusSpy.mock.calls).toEqual([[NetworkStatus.loading]]);
+  await flushEffectsAndWait();
+  expect(onNetworkStatusSpy.mock.calls).toEqual([
+    [NetworkStatus.loading],
+    [NetworkStatus.ready],
+  ]);
+
+  onNetworkStatusSpy.mockClear();
+
+  const fetchMoreButton = getByTestId('fetch-more');
+  fireEvent.click(fetchMoreButton);
+  await flushEffectsAndWait();
+
+  expect(onNetworkStatusSpy.mock.calls).toEqual([
+    [NetworkStatus.fetchMore],
+    [NetworkStatus.ready],
+    [NetworkStatus.ready],
+  ]);
 });
