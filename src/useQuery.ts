@@ -56,7 +56,7 @@ export function useQuery<TData = any, TVariables = OperationVariables>(
     // Hook options
     ssr = true,
     skip = false,
-    suspend = true,
+    suspend = false,
 
     // Watch options
     pollInterval,
