@@ -1,5 +1,5 @@
 import ApolloClient from 'apollo-client';
-import { ApolloLink, Observable } from 'apollo-link';
+import { DocumentNode } from 'apollo-link';
 import { MockedResponse } from 'apollo-link-mock';
 import gql from 'graphql-tag';
 import React, {
@@ -10,6 +10,7 @@ import React, {
 } from 'react';
 import { renderToString } from 'react-dom/server';
 
+import { GraphQLError } from 'graphql';
 import { ApolloProvider } from '../ApolloContext';
 import createClient from '../__testutils__/createClient';
 import { getMarkupFromTree } from '../getMarkupFromTree';
@@ -37,26 +38,45 @@ interface UserQueryResult {
   currentUser: { firstName: string };
 }
 
+const GRAPQHL_ERROR_QUERY = gql`
+  query GrapqhlErrorQuery {
+    authorized
+  }
+`;
+
+const NETWORK_ERROR_QUERY = gql`
+  query NetworkErrorQuery {
+    isAuthorized
+  }
+`;
+
 const MOCKS: MockedResponse[] = [
   {
     request: { query: AUTH_QUERY },
     result: { data: { isAuthorized: true } },
   },
+
   {
     request: { query: USER_QUERY },
     result: { data: { currentUser: { firstName: 'James' } } },
   },
+
+  {
+    request: { query: GRAPQHL_ERROR_QUERY, variables: {} },
+    result: {
+      data: { __typename: 'Query' },
+      errors: [new GraphQLError('Simulating GraphQL error')],
+    },
+  },
+
+  {
+    error: new Error('Simulating network error'),
+    request: { query: NETWORK_ERROR_QUERY, variables: {} },
+  },
 ];
 
-const linkReturningError = new ApolloLink(
-  () =>
-    new Observable(observer => {
-      observer.error(new Error('Simulating network error'));
-    })
-);
-
-function createMockClient(link?: ApolloLink) {
-  return createClient({ link, mocks: MOCKS, addTypename: false });
+function createMockClient() {
+  return createClient({ mocks: MOCKS, addTypename: false });
 }
 
 function useAuthDetails(options?: QueryHookOptions<{}>) {
@@ -65,8 +85,12 @@ function useAuthDetails(options?: QueryHookOptions<{}>) {
   return Boolean(!loading && data && data.isAuthorized);
 }
 
-function UserDetails(props: QueryHookOptions<{}>) {
-  const { data, loading } = useQuery<UserQueryResult>(USER_QUERY, props);
+interface UserDetailsProps extends QueryHookOptions<{}> {
+  readonly query?: DocumentNode;
+}
+
+function UserDetails({ query = USER_QUERY, ...props }: UserDetailsProps) {
+  const { data, loading } = useQuery<UserQueryResult>(query, props);
 
   return (
     <>
@@ -81,7 +105,7 @@ function UserDetails(props: QueryHookOptions<{}>) {
   );
 }
 
-interface UserWrapperProps extends QueryHookOptions<{}> {
+interface UserWrapperProps extends UserDetailsProps {
   readonly client: ApolloClient<object>;
 }
 
@@ -224,14 +248,41 @@ describe.each([[true], [false]])(
       ).rejects.toBe(fooError);
     });
 
-    it('should handle errors thrown by queries', async () => {
-      const client = createMockClient(linkReturningError);
-      const tree = <UserDetailsWrapper client={client} suspend={suspend} />;
+    it('should handle network errors thrown by queries', async () => {
+      const client = createMockClient();
+      const tree = (
+        <UserDetailsWrapper
+          client={client}
+          suspend={suspend}
+          query={NETWORK_ERROR_QUERY}
+        />
+      );
 
       await expect(
         getMarkupFromTree({ tree, renderFunction: renderToString })
       ).rejects.toMatchInlineSnapshot(
         `[Error: Network error: Simulating network error]`
+      );
+
+      expect(renderToString(tree)).toMatchInlineSnapshot(
+        `"No Current User (failed)"`
+      );
+    });
+
+    it('should handle GraphQL errors thrown by queries', async () => {
+      const client = createMockClient();
+      const tree = (
+        <UserDetailsWrapper
+          client={client}
+          suspend={suspend}
+          query={GRAPQHL_ERROR_QUERY}
+        />
+      );
+
+      await expect(
+        getMarkupFromTree({ tree, renderFunction: renderToString })
+      ).rejects.toMatchInlineSnapshot(
+        `[Error: GraphQL error: Simulating GraphQL error]`
       );
 
       expect(renderToString(tree)).toMatchInlineSnapshot(
