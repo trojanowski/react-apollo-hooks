@@ -1,5 +1,6 @@
 import {
   ApolloCurrentResult,
+  ApolloError,
   ApolloQueryResult,
   FetchMoreOptions,
   FetchMoreQueryOptions,
@@ -126,7 +127,10 @@ export function useQuery<TData = any, TVariables = OperationVariables>(
 
       return {
         data: result.data as TData,
-        error: result.error,
+        error:
+          result.errors && result.errors.length > 0
+            ? new ApolloError({ graphQLErrors: result.errors })
+            : result.error,
         errors: result.errors,
         loading: result.loading,
         partial: result.partial,

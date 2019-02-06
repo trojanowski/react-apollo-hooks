@@ -1,87 +1,17 @@
 import { ApolloClient } from 'apollo-client';
-import { ApolloLink, DocumentNode, Observable } from 'apollo-link';
+import { DocumentNode } from 'apollo-link';
+import { MockedResponse } from 'apollo-link-mock';
 import gql from 'graphql-tag';
 import { withProfiler } from 'jest-react-profiler';
-import React, { Fragment, Suspense, SuspenseProps } from 'react';
+import React, { Suspense, SuspenseProps } from 'react';
 import { cleanup, render } from 'react-testing-library';
 
+import { GraphQLError } from 'graphql';
 import { ApolloProvider, QueryHookOptions, useQuery } from '..';
 import createClient from '../__testutils__/createClient';
 import { SAMPLE_TASKS } from '../__testutils__/data';
 import flushRequests from '../__testutils__/flushRequests';
 import noop from '../__testutils__/noop';
-
-const TASKS_MOCKS = [
-  {
-    request: {
-      query: gql`
-        query TasksQuery {
-          tasks {
-            id
-            text
-            completed
-            __typename
-          }
-        }
-      `,
-      variables: {},
-    },
-    result: {
-      data: {
-        __typename: 'Query',
-        tasks: [...SAMPLE_TASKS],
-      },
-    },
-  },
-
-  {
-    request: {
-      query: gql`
-        query FilteredTasksQuery($completed: Boolean!) {
-          tasks(completed: $completed) {
-            id
-            text
-            completed
-            __typename
-          }
-        }
-      `,
-      variables: {
-        completed: true,
-      },
-    },
-    result: {
-      data: {
-        __typename: 'Query',
-        tasks: SAMPLE_TASKS.filter(task => task.completed),
-      },
-    },
-  },
-
-  {
-    request: {
-      query: gql`
-        query FilteredTasksQuery($completed: Boolean!) {
-          tasks(completed: $completed) {
-            id
-            text
-            completed
-            __typename
-          }
-        }
-      `,
-      variables: {
-        completed: false,
-      },
-    },
-    result: {
-      data: {
-        __typename: 'Query',
-        tasks: SAMPLE_TASKS.filter(task => !task.completed),
-      },
-    },
-  },
-];
 
 const TASKS_QUERY = gql`
   query TasksQuery {
@@ -89,6 +19,22 @@ const TASKS_QUERY = gql`
       id
       text
       completed
+    }
+  }
+`;
+
+const GRAPQHL_ERROR_QUERY = gql`
+  query GrapqhlErrorQuery {
+    tasks {
+      guid
+    }
+  }
+`;
+
+const NETWORK_ERROR_QUERY = gql`
+  query NetworkErrorQuery {
+    tasks {
+      id
     }
   }
 `;
@@ -103,15 +49,50 @@ const FILTERED_TASKS_QUERY = gql`
   }
 `;
 
-const linkReturningError = new ApolloLink(
-  () =>
-    new Observable(observer => {
-      observer.error(new Error('Simulating network error'));
-    })
-);
+const TASKS_MOCKS: MockedResponse[] = [
+  {
+    request: { query: TASKS_QUERY, variables: {} },
+    result: {
+      data: { __typename: 'Query', tasks: [...SAMPLE_TASKS] },
+    },
+  },
 
-function createMockClient(link?: ApolloLink) {
-  return createClient({ link, mocks: TASKS_MOCKS });
+  {
+    request: { query: GRAPQHL_ERROR_QUERY, variables: {} },
+    result: {
+      data: { __typename: 'Query' },
+      errors: [new GraphQLError('Simulating GraphQL error')],
+    },
+  },
+
+  {
+    error: new Error('Simulating network error'),
+    request: { query: NETWORK_ERROR_QUERY, variables: {} },
+  },
+
+  {
+    request: { query: FILTERED_TASKS_QUERY, variables: { completed: true } },
+    result: {
+      data: {
+        __typename: 'Query',
+        tasks: SAMPLE_TASKS.filter(task => task.completed),
+      },
+    },
+  },
+
+  {
+    request: { query: FILTERED_TASKS_QUERY, variables: { completed: false } },
+    result: {
+      data: {
+        __typename: 'Query',
+        tasks: SAMPLE_TASKS.filter(task => !task.completed),
+      },
+    },
+  },
+];
+
+function createMockClient() {
+  return createClient({ mocks: TASKS_MOCKS });
 }
 
 interface TasksProps<TVariables = any> extends QueryHookOptions<TVariables> {
@@ -129,20 +110,10 @@ function TaskList({ tasks }: { tasks: Array<{ id: number; text: string }> }) {
 }
 
 function Tasks({ query, ...options }: TasksProps) {
-  const { data, error, errors, loading } = useQuery(query, options);
+  const { data, error, loading } = useQuery(query, options);
 
   if (error) {
     return <>{error.message}</>;
-  }
-
-  if (errors) {
-    return (
-      <>
-        {errors.map(x => (
-          <Fragment key={x.message}>{x.message}</Fragment>
-        ))}
-      </>
-    );
   }
 
   if (loading) {
@@ -749,6 +720,89 @@ it('starts skipped query in non-suspense mode', async () => {
       Learn Apollo
     </li>
   </ul>
+</div>
+`);
+});
+
+it('handles network error in suspense mode', async () => {
+  const client = createMockClient();
+  const { container } = render(
+    <TasksWrapper suspend client={client} query={NETWORK_ERROR_QUERY} />
+  );
+
+  expect(container).toMatchInlineSnapshot(`
+<div>
+  Loading
+</div>
+`);
+
+  await flushEffectsAndWait();
+
+  expect(container).toMatchInlineSnapshot(`
+<div>
+  Network error: Simulating network error
+</div>
+`);
+});
+
+it('handles network error in non-suspense mode', async () => {
+  const client = createMockClient();
+  const { container } = render(
+    <TasksWrapper suspend={false} client={client} query={NETWORK_ERROR_QUERY} />
+  );
+
+  expect(container).toMatchInlineSnapshot(`
+<div>
+  Loading without suspense
+</div>
+`);
+  await flushEffectsAndWait();
+
+  expect(container).toMatchInlineSnapshot(`
+<div>
+  Network error: Simulating network error
+</div>
+`);
+});
+
+it('handles GraphQL error in suspense mode', async () => {
+  const client = createMockClient();
+  const { container } = render(
+    <TasksWrapper suspend client={client} query={GRAPQHL_ERROR_QUERY} />
+  );
+
+  expect(container).toMatchInlineSnapshot(`
+<div>
+  Loading
+</div>
+`);
+
+  await flushEffectsAndWait();
+
+  expect(container).toMatchInlineSnapshot(`
+<div>
+  GraphQL error: Simulating GraphQL error
+</div>
+`);
+});
+
+it('handles GraphQL error in non-suspense mode', async () => {
+  const client = createMockClient();
+  const { container } = render(
+    <TasksWrapper suspend={false} client={client} query={GRAPQHL_ERROR_QUERY} />
+  );
+
+  expect(container).toMatchInlineSnapshot(`
+<div>
+  Loading without suspense
+</div>
+`);
+
+  await flushEffectsAndWait();
+
+  expect(container).toMatchInlineSnapshot(`
+<div>
+  GraphQL error: Simulating GraphQL error
 </div>
 `);
 });
