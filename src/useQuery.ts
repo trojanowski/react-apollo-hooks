@@ -23,7 +23,7 @@ import { Omit, objToKey } from './utils';
 export interface QueryHookState<TData>
   extends Pick<
     ApolloCurrentResult<undefined | TData>,
-    'error' | 'loading' | 'partial'
+    'error' | 'errors' | 'loading' | 'partial'
   > {
   data?: TData;
 }
@@ -131,6 +131,7 @@ export function useQuery<TData = any, TVariables = OperationVariables>(
           result.errors && result.errors.length > 0
             ? new ApolloError({ graphQLErrors: result.errors })
             : result.error,
+        errors: result.errors,
         loading: result.loading,
         partial: result.partial,
       };

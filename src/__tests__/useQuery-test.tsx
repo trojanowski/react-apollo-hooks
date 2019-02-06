@@ -461,8 +461,7 @@ it("shouldn't make obsolete renders in suspense mode", async () => {
 </div>
 `);
 
-  // TODO: check why
-  expect(TasksWrapperWithProfiler).toHaveCommittedTimes(2);
+  expect(TasksWrapperWithProfiler).toHaveCommittedTimes(1);
 
   rerender(
     <TasksWrapperWithProfiler
