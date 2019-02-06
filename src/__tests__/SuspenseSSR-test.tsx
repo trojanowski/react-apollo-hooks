@@ -9,7 +9,7 @@ import { render } from 'react-testing-library';
 import { ApolloProvider } from '../ApolloContext';
 import { unstable_SuspenseSSR as SuspenseSSR } from '../SuspenseSSR';
 import createClient from '../__testutils__/createClient';
-import flushEffectsAndWait from '../__testutils__/flushEffectsAndWait';
+import flushRequests from '../__testutils__/flushRequests';
 import { getMarkupFromTree } from '../getMarkupFromTree';
 import { QueryHookOptions, useQuery } from '../useQuery';
 
@@ -68,6 +68,8 @@ function UserDetailsWrapper({ client, ...props }: UserWrapperProps) {
 
 describe.each([[true], [false]])('SuspenseSSR with "suspend: %s"', suspend => {
   it('not throws in react-dom', async () => {
+    jest.useFakeTimers();
+
     const client = createMockClient();
 
     const { container } = render(
@@ -88,13 +90,15 @@ describe.each([[true], [false]])('SuspenseSSR with "suspend: %s"', suspend => {
 `);
     }
 
-    await flushEffectsAndWait();
+    await flushRequests();
 
     expect(container).toMatchInlineSnapshot(`
 <div>
   James
 </div>
 `);
+
+    jest.useRealTimers();
   });
 
   it('not throws in react-dom/server', async () => {

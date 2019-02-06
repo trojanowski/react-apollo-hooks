@@ -8,7 +8,7 @@ import { cleanup, render } from 'react-testing-library';
 import { ApolloProvider, QueryHookOptions, useQuery } from '..';
 import createClient from '../__testutils__/createClient';
 import { SAMPLE_TASKS } from '../__testutils__/data';
-import flushEffectsAndWait from '../__testutils__/flushEffectsAndWait';
+import flushRequests from '../__testutils__/flushRequests';
 import noop from '../__testutils__/noop';
 
 const TASKS_MOCKS = [
@@ -176,6 +176,8 @@ function TasksWrapper({ client, ...props }: TasksWrapperProps) {
 
 afterEach(cleanup);
 
+jest.useFakeTimers();
+
 it('should return the query data', async () => {
   const client = createMockClient();
   const { container } = render(
@@ -188,7 +190,7 @@ it('should return the query data', async () => {
 </div>
 `);
 
-  await flushEffectsAndWait();
+  await flushRequests();
 
   expect(container).toMatchInlineSnapshot(`
 <div>
@@ -219,7 +221,7 @@ it('should work with suspense disabled', async () => {
 </div>
 `);
 
-  await flushEffectsAndWait();
+  await flushRequests();
 
   expect(container).toMatchInlineSnapshot(`
 <div>
@@ -254,7 +256,7 @@ it('should support query variables', async () => {
 </div>
 `);
 
-  await flushEffectsAndWait();
+  await flushRequests();
 
   expect(container).toMatchInlineSnapshot(`
 <div>
@@ -283,7 +285,7 @@ it('should support updating query variables', async () => {
 </div>
 `);
 
-  await flushEffectsAndWait();
+  await flushRequests();
 
   expect(container).toMatchInlineSnapshot(`
 <div>
@@ -316,9 +318,7 @@ it('should support updating query variables', async () => {
 </div>
 `);
 
-  // TODO: It doesn't pass if not invoked twice
-  await flushEffectsAndWait();
-  await flushEffectsAndWait();
+  await flushRequests();
 
   expect(container).toMatchInlineSnapshot(`
 <div>
@@ -366,7 +366,7 @@ it("shouldn't suspend if the data is already cached", async () => {
     />
   );
 
-  await flushEffectsAndWait();
+  await flushRequests();
 
   rerender(
     <TasksWrapper
@@ -376,7 +376,7 @@ it("shouldn't suspend if the data is already cached", async () => {
     />
   );
 
-  await flushEffectsAndWait();
+  await flushRequests();
 
   rerender(
     <TasksWrapper
@@ -434,7 +434,7 @@ it("shouldn't ignore apollo errors in non-suspense mode", async () => {
 </div>
 `);
 
-  await flushEffectsAndWait();
+  await flushRequests();
 
   expect(container).toMatchInlineSnapshot(`
 <div>
@@ -459,7 +459,7 @@ it('should ignore apollo errors by default in non-suspense mode', async () => {
 
   expect(consoleLogMock).toBeCalledTimes(0);
 
-  await flushEffectsAndWait();
+  await flushRequests();
 
   expect(container).toMatchInlineSnapshot(`
 <div>
@@ -487,7 +487,7 @@ it('should allow a query with non-standard fetch policy without suspense', async
 </div>
 `);
 
-  await flushEffectsAndWait();
+  await flushRequests();
 
   expect(container).toMatchInlineSnapshot(`
 <div>
@@ -526,7 +526,7 @@ it("shouldn't make obsolete renders in suspense mode", async () => {
 
   expect(TasksWrapperWithProfiler).toHaveCommittedTimes(1);
 
-  await flushEffectsAndWait();
+  await flushRequests();
 
   expect(container).toMatchInlineSnapshot(`
 <div>
@@ -538,8 +538,7 @@ it("shouldn't make obsolete renders in suspense mode", async () => {
 </div>
 `);
 
-  // TODO: check why
-  expect(TasksWrapperWithProfiler).toHaveCommittedTimes(2);
+  expect(TasksWrapperWithProfiler).toHaveCommittedTimes(1);
 
   rerender(
     <TasksWrapperWithProfiler
@@ -562,7 +561,7 @@ it("shouldn't make obsolete renders in suspense mode", async () => {
 </div>
 `);
 
-  await flushEffectsAndWait();
+  await flushRequests();
 
   expect(container).toMatchInlineSnapshot(`
 <div>
@@ -605,7 +604,7 @@ it("shouldn't make obsolete renders in suspense mode", async () => {
 </div>
 `);
 
-  await flushEffectsAndWait();
+  await flushRequests();
 
   expect(TasksWrapperWithProfiler).toHaveCommittedTimes(1);
 });
@@ -622,7 +621,7 @@ it('skips query in suspense mode', async () => {
 </div>
 `);
 
-  await flushEffectsAndWait();
+  await flushRequests();
 
   expect(container).toMatchInlineSnapshot(`
 <div>
@@ -643,7 +642,7 @@ it('skips query in non-suspense mode', async () => {
 </div>
 `);
 
-  await flushEffectsAndWait();
+  await flushRequests();
 
   expect(container).toMatchInlineSnapshot(`
 <div>
@@ -664,7 +663,7 @@ it('starts skipped query in suspense mode', async () => {
 </div>
 `);
 
-  await flushEffectsAndWait();
+  await flushRequests();
 
   expect(container).toMatchInlineSnapshot(`
 <div>
@@ -681,7 +680,7 @@ it('starts skipped query in suspense mode', async () => {
 </div>
 `);
 
-  await flushEffectsAndWait();
+  await flushRequests();
 
   expect(container).toMatchInlineSnapshot(`
 <div>
@@ -712,7 +711,7 @@ it('starts skipped query in non-suspense mode', async () => {
 </div>
 `);
 
-  await flushEffectsAndWait();
+  await flushRequests();
 
   expect(container).toMatchInlineSnapshot(`
 <div>
@@ -735,7 +734,7 @@ it('starts skipped query in non-suspense mode', async () => {
 </div>
 `);
 
-  await flushEffectsAndWait();
+  await flushRequests();
 
   expect(container).toMatchInlineSnapshot(`
 <div>
