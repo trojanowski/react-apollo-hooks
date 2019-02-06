@@ -393,54 +393,6 @@ it("shouldn't allow a query with non-standard fetch policy with suspense", async
   consoleErrorMock.mockRestore();
 });
 
-it("shouldn't ignore apollo errors in non-suspense mode", async () => {
-  const client = createMockClient(linkReturningError);
-  const { container } = render(
-    <TasksWrapper client={client} query={TASKS_QUERY} />
-  );
-
-  expect(container).toMatchInlineSnapshot(`
-<div>
-  Loading
-</div>
-`);
-
-  await flushRequests();
-
-  expect(container).toMatchInlineSnapshot(`
-<div>
-  Network error: Simulating network error
-</div>
-`);
-});
-
-it('should ignore apollo errors by default in non-suspense mode', async () => {
-  const client = createMockClient(linkReturningError);
-  const consoleLogMock = jest.spyOn(console, 'error').mockImplementation(noop);
-
-  const { container } = render(
-    <TasksWrapper client={client} suspend={false} query={TASKS_QUERY} />
-  );
-
-  expect(container).toMatchInlineSnapshot(`
-<div>
-  Loading without suspense
-</div>
-`);
-
-  expect(consoleLogMock).toBeCalledTimes(0);
-
-  await flushRequests();
-
-  expect(container).toMatchInlineSnapshot(`
-<div>
-  Network error: Simulating network error
-</div>
-`);
-
-  consoleLogMock.mockRestore();
-});
-
 it('should allow a query with non-standard fetch policy without suspense', async () => {
   const client = createMockClient();
   const { container } = render(
@@ -736,7 +688,7 @@ it('handles network error in suspense mode', async () => {
 </div>
 `);
 
-  await flushEffectsAndWait();
+  await flushRequests();
 
   expect(container).toMatchInlineSnapshot(`
 <div>
@@ -756,7 +708,7 @@ it('handles network error in non-suspense mode', async () => {
   Loading without suspense
 </div>
 `);
-  await flushEffectsAndWait();
+  await flushRequests();
 
   expect(container).toMatchInlineSnapshot(`
 <div>
@@ -777,7 +729,7 @@ it('handles GraphQL error in suspense mode', async () => {
 </div>
 `);
 
-  await flushEffectsAndWait();
+  await flushRequests();
 
   expect(container).toMatchInlineSnapshot(`
 <div>
@@ -798,7 +750,7 @@ it('handles GraphQL error in non-suspense mode', async () => {
 </div>
 `);
 
-  await flushEffectsAndWait();
+  await flushRequests();
 
   expect(container).toMatchInlineSnapshot(`
 <div>
