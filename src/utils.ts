@@ -18,3 +18,16 @@ export function objToKey<T extends Record<string, any>>(obj: T): T | string {
 export function isPromiseLike<T>(value: unknown): value is PromiseLike<T> {
   return value != null && typeof (value as PromiseLike<T>).then === 'function';
 }
+
+export function compact(obj: any) {
+  return Object.keys(obj).reduce(
+    (acc, key) => {
+      if (obj[key] !== undefined) {
+        acc[key] = obj[key];
+      }
+
+      return acc;
+    },
+    {} as any
+  );
+}

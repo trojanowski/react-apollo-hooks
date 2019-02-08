@@ -18,7 +18,7 @@ import {
   getCachedObservableQuery,
   invalidateCachedObservableQuery,
 } from './queryCache';
-import { Omit, objToKey } from './utils';
+import { Omit, compact, objToKey } from './utils';
 
 export interface QueryHookState<TData>
   extends Pick<
@@ -87,17 +87,18 @@ export function useQuery<TData = any, TVariables = OperationVariables>(
       : actualCachePolicy;
 
   const watchQueryOptions: WatchQueryOptions<TVariables> = useMemo(
-    () => ({
-      context,
-      errorPolicy,
-      fetchPolicy,
-      fetchResults,
-      metadata,
-      notifyOnNetworkStatusChange,
-      pollInterval,
-      query,
-      variables,
-    }),
+    () =>
+      compact({
+        context,
+        errorPolicy,
+        fetchPolicy,
+        fetchResults,
+        metadata,
+        notifyOnNetworkStatusChange,
+        pollInterval,
+        query,
+        variables,
+      }),
     [
       query,
 
@@ -112,7 +113,6 @@ export function useQuery<TData = any, TVariables = OperationVariables>(
       fetchResults,
     ]
   );
-
   const observableQuery = useMemo(
     () =>
       getCachedObservableQuery<TData, TVariables>(client, watchQueryOptions),
