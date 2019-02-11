@@ -5,8 +5,10 @@ import { cleanup, fireEvent, render } from 'react-testing-library';
 import { ApolloProvider, useMutation, useQuery } from '..';
 import createClient from '../__testutils__/createClient';
 import { SAMPLE_TASKS } from '../__testutils__/data';
-import flushEffectsAndWait from '../__testutils__/flushEffectsAndWait';
 import noop from '../__testutils__/noop';
+import wait from '../__testutils__/wait';
+
+jest.mock('../internal/actHack');
 
 const TASKS_MOCKS = [
   {
@@ -182,7 +184,7 @@ it('should create a function to perform mutations', async () => {
     </ApolloProvider>
   );
 
-  await flushEffectsAndWait();
+  await wait();
 
   const firstCheckbox = container.querySelector<HTMLInputElement>(
     'input:checked'
@@ -190,7 +192,7 @@ it('should create a function to perform mutations', async () => {
   expect(firstCheckbox.checked).toBeTruthy();
 
   fireEvent.click(firstCheckbox);
-  await flushEffectsAndWait();
+  await wait();
 
   expect(container.querySelector('input')!.checked).toBeFalsy();
 });
@@ -239,11 +241,11 @@ it('should allow to pass options forwarded to the mutation', async () => {
     </ApolloProvider>
   );
 
-  await flushEffectsAndWait();
+  await wait();
 
   const addTaskButton = getByTestId('add-task-button');
   fireEvent.click(addTaskButton);
-  await flushEffectsAndWait();
+  await wait();
 
   expect(container.querySelectorAll('li')).toHaveLength(4);
   expect(container.querySelectorAll('li')[3].textContent).toBe('Learn Jest');
