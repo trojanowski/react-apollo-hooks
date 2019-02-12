@@ -10,8 +10,10 @@ import { GraphQLError } from 'graphql';
 import { ApolloProvider, QueryHookOptions, useQuery } from '..';
 import createClient from '../__testutils__/createClient';
 import { SAMPLE_TASKS } from '../__testutils__/data';
-import flushEffectsAndWait from '../__testutils__/flushEffectsAndWait';
 import noop from '../__testutils__/noop';
+import wait from '../__testutils__/wait';
+
+jest.mock('../internal/actHack');
 
 const TASKS_QUERY = gql`
   query TasksQuery {
@@ -159,7 +161,7 @@ it('should return the query data', async () => {
 </div>
 `);
 
-  await flushEffectsAndWait();
+  await wait();
 
   expect(container).toMatchInlineSnapshot(`
 <div>
@@ -190,7 +192,7 @@ it('should work with suspense disabled', async () => {
 </div>
 `);
 
-  await flushEffectsAndWait();
+  await wait();
 
   expect(container).toMatchInlineSnapshot(`
 <div>
@@ -225,7 +227,7 @@ it('should support query variables', async () => {
 </div>
 `);
 
-  await flushEffectsAndWait();
+  await wait();
 
   expect(container).toMatchInlineSnapshot(`
 <div>
@@ -254,7 +256,7 @@ it('should support updating query variables', async () => {
 </div>
 `);
 
-  await flushEffectsAndWait();
+  await wait();
 
   expect(container).toMatchInlineSnapshot(`
 <div>
@@ -288,8 +290,8 @@ it('should support updating query variables', async () => {
 `);
 
   // TODO: It doesn't pass if not invoked twice
-  await flushEffectsAndWait();
-  await flushEffectsAndWait();
+  await wait();
+  await wait();
 
   expect(container).toMatchInlineSnapshot(`
 <div>
@@ -337,7 +339,7 @@ it("shouldn't suspend if the data is already cached", async () => {
     />
   );
 
-  await flushEffectsAndWait();
+  await wait();
 
   rerender(
     <TasksWrapper
@@ -347,7 +349,7 @@ it("shouldn't suspend if the data is already cached", async () => {
     />
   );
 
-  await flushEffectsAndWait();
+  await wait();
 
   rerender(
     <TasksWrapper
@@ -410,7 +412,7 @@ it('should allow a query with non-standard fetch policy without suspense', async
 </div>
 `);
 
-  await flushEffectsAndWait();
+  await wait();
 
   expect(container).toMatchInlineSnapshot(`
 <div>
@@ -449,7 +451,7 @@ it("shouldn't make obsolete renders in suspense mode", async () => {
 
   expect(TasksWrapperWithProfiler).toHaveCommittedTimes(1);
 
-  await flushEffectsAndWait();
+  await wait();
 
   expect(container).toMatchInlineSnapshot(`
 <div>
@@ -485,7 +487,7 @@ it("shouldn't make obsolete renders in suspense mode", async () => {
 </div>
 `);
 
-  await flushEffectsAndWait();
+  await wait();
 
   expect(container).toMatchInlineSnapshot(`
 <div>
@@ -528,7 +530,7 @@ it("shouldn't make obsolete renders in suspense mode", async () => {
 </div>
 `);
 
-  await flushEffectsAndWait();
+  await wait();
 
   expect(TasksWrapperWithProfiler).toHaveCommittedTimes(1);
 });
@@ -545,7 +547,7 @@ it('skips query in suspense mode', async () => {
 </div>
 `);
 
-  await flushEffectsAndWait();
+  await wait();
 
   expect(container).toMatchInlineSnapshot(`
 <div>
@@ -566,7 +568,7 @@ it('skips query in non-suspense mode', async () => {
 </div>
 `);
 
-  await flushEffectsAndWait();
+  await wait();
 
   expect(container).toMatchInlineSnapshot(`
 <div>
@@ -587,7 +589,7 @@ it('starts skipped query in suspense mode', async () => {
 </div>
 `);
 
-  await flushEffectsAndWait();
+  await wait();
 
   expect(container).toMatchInlineSnapshot(`
 <div>
@@ -604,7 +606,7 @@ it('starts skipped query in suspense mode', async () => {
 </div>
 `);
 
-  await flushEffectsAndWait();
+  await wait();
 
   expect(container).toMatchInlineSnapshot(`
 <div>
@@ -635,7 +637,7 @@ it('starts skipped query in non-suspense mode', async () => {
 </div>
 `);
 
-  await flushEffectsAndWait();
+  await wait();
 
   expect(container).toMatchInlineSnapshot(`
 <div>
@@ -658,7 +660,7 @@ it('starts skipped query in non-suspense mode', async () => {
 </div>
 `);
 
-  await flushEffectsAndWait();
+  await wait();
 
   expect(container).toMatchInlineSnapshot(`
 <div>
@@ -689,7 +691,7 @@ it('handles network error in suspense mode', async () => {
 </div>
 `);
 
-  await flushEffectsAndWait();
+  await wait();
 
   expect(container).toMatchInlineSnapshot(`
 <div>
@@ -709,7 +711,7 @@ it('handles network error in non-suspense mode', async () => {
   Loading without suspense
 </div>
 `);
-  await flushEffectsAndWait();
+  await wait();
 
   expect(container).toMatchInlineSnapshot(`
 <div>
@@ -730,7 +732,7 @@ it('handles GraphQL error in suspense mode', async () => {
 </div>
 `);
 
-  await flushEffectsAndWait();
+  await wait();
 
   expect(container).toMatchInlineSnapshot(`
 <div>
@@ -751,7 +753,7 @@ it('handles GraphQL error in non-suspense mode', async () => {
 </div>
 `);
 
-  await flushEffectsAndWait();
+  await wait();
 
   expect(container).toMatchInlineSnapshot(`
 <div>

@@ -9,9 +9,11 @@ import { render } from 'react-testing-library';
 import { ApolloProvider } from '../ApolloContext';
 import { unstable_SuspenseSSR as SuspenseSSR } from '../SuspenseSSR';
 import createClient from '../__testutils__/createClient';
-import flushEffectsAndWait from '../__testutils__/flushEffectsAndWait';
+import wait from '../__testutils__/wait';
 import { getMarkupFromTree } from '../getMarkupFromTree';
 import { QueryHookOptions, useQuery } from '../useQuery';
+
+jest.mock('../internal/actHack');
 
 const USER_QUERY = gql`
   {
@@ -88,7 +90,7 @@ describe.each([[true], [false]])('SuspenseSSR with "suspend: %s"', suspend => {
 `);
     }
 
-    await flushEffectsAndWait();
+    await wait();
 
     expect(container).toMatchInlineSnapshot(`
 <div>
