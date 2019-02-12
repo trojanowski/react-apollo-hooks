@@ -89,8 +89,13 @@ const GET_DOGS = gql`
 `;
 
 const Dogs = () => {
-  const { data, error } = useQuery(GET_DOGS);
-  if (error) return `Error! ${error.message}`;
+  const { data, error, loading } = useQuery(GET_DOGS);
+  if (loading) {
+    return <div>Loading...</div>;
+  };
+  if (error) {
+    return `Error! ${error.message}`;
+  };
 
   return (
     <ul>
@@ -100,44 +105,53 @@ const Dogs = () => {
     </ul>
   );
 };
+
 ```
 
-To check if data is loaded use the
-[Suspense](https://reactjs.org/docs/code-splitting.html#suspense) component:
+### Usage with Suspense (experimental)
+
+You can use `useQuery` with [React Suspense](https://www.youtube.com/watch?v=6g3g0Q_XVb4)
+with the `{ suspend: true }` option.
+Please note that it's not yet recommended to use it in production. Please look
+at the [issue #69](https://github.com/trojanowski/react-apollo-hooks/issues/69)
+for details.
+
+Example usage:
 
 ```javascript
+import gql from 'graphql-tag';
 import React, { Suspense } from 'react';
+import { useQuery } from 'react-apollo-hooks';
+
+const GET_DOGS = gql`
+  {
+    dogs {
+      id
+      breed
+    }
+  }
+`;
+
+const Dogs = () => {
+  const { data, error } = useQuery(GET_DOGS, { suspend: true });
+  if (error) {
+    return `Error! ${error.message}`;
+  }
+
+  return (
+    <ul>
+      {data.dogs.map(dog => (
+        <li key={dog.id}>{dog.breed}</li>
+      ))}
+    </ul>
+  );
+};
 
 const MyComponent = () => (
   <Suspense fallback={<div>Loading...</div>}>
     <Dogs />
   </Suspense>
 );
-```
-
-Alternatively you can use the `useQuery` hook without suspense with the
-`{ suspend: false }` option. It's required if you want to use non-standard fetch
-policy. You have to manage loading state by yourself in that case:
-
-```javascript
-import gql from 'graphql-tag';
-import { useQuery } from 'react-apollo-hooks';
-
-const GET_DOGS = gql`...`;
-
-const Dogs = () => {
-  const { data, error, loading } = useQuery(GET_DOGS, { suspend: false });
-  if (loading) return <div>Loading...</div>;
-  if (error) return `Error! ${error.message}`;
-
-  return (
-    <ul>
-      {data.dogs.map(dog => (
-        <li key={dog.id}>{dog.breed}</li>
-      ))}
-    </ul>
-  );
-};
 ```
 
 ## useMutation
@@ -264,15 +278,15 @@ component is not supported. You can use `unstable_SuspenseSSR` provided
 by this library instead:
 
 ```javascript
-import { unstable_SuspenseSSR } from 'react-apollo-hooks';
+import { unstable_SuspenseSSR as UnstableSuspenseSSR } from 'react-apollo-hooks';
 
 function MyComponent() {
   return (
-    <unstable_SuspenseSSR fallback={<Spinner />}>
+    <UnstableSuspenseSSR fallback={<Spinner />}>
       <div>
         <ComponentWithGraphqlQuery />
       </div>
-    </unstable_SuspenseSSR>
+    </UnstableSuspenseSSR>
   );
 }
 ```

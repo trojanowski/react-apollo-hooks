@@ -1,5 +1,5 @@
 import gql from 'graphql-tag';
-import React, { Suspense } from 'react';
+import React from 'react';
 import { cleanup, fireEvent, render } from 'react-testing-library';
 
 import { ApolloProvider, useMutation, useQuery } from '..';
@@ -160,11 +160,15 @@ afterEach(cleanup);
 
 it('should create a function to perform mutations', async () => {
   function TasksWithMutation() {
-    const { data, error } = useQuery(TASKS_QUERY);
+    const { data, error, loading } = useQuery(TASKS_QUERY);
     const toggleTask = useMutation(TOGGLE_TASK_MUTATION);
 
     if (error) {
       throw error;
+    }
+
+    if (loading) {
+      return <>Loading</>;
     }
 
     return (
@@ -178,9 +182,7 @@ it('should create a function to perform mutations', async () => {
   const client = createClient({ mocks: TASKS_MOCKS });
   const { container } = render(
     <ApolloProvider client={client}>
-      <Suspense fallback={<div>Loading</div>}>
-        <TasksWithMutation />
-      </Suspense>
+      <TasksWithMutation />
     </ApolloProvider>
   );
 
@@ -199,7 +201,7 @@ it('should create a function to perform mutations', async () => {
 
 it('should allow to pass options forwarded to the mutation', async () => {
   function TasksWithMutation() {
-    const { data, error } = useQuery(TASKS_QUERY);
+    const { data, error, loading } = useQuery(TASKS_QUERY);
     const addTask = useMutation<any, { input: Partial<TaskFragment> }>(
       ADD_TASK_MUTATION,
       {
@@ -222,6 +224,10 @@ it('should allow to pass options forwarded to the mutation', async () => {
       throw error;
     }
 
+    if (loading) {
+      return <>Loading</>;
+    }
+
     return (
       <>
         <TaskList onChange={noop} tasks={data.tasks} />
@@ -235,9 +241,7 @@ it('should allow to pass options forwarded to the mutation', async () => {
   const client = createClient({ mocks: TASKS_MOCKS });
   const { container, getByTestId } = render(
     <ApolloProvider client={client}>
-      <Suspense fallback={<div>Loading</div>}>
-        <TasksWithMutation />
-      </Suspense>
+      <TasksWithMutation />
     </ApolloProvider>
   );
 
