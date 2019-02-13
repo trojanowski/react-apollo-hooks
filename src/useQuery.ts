@@ -5,6 +5,7 @@ import {
   FetchMoreOptions,
   FetchMoreQueryOptions,
   FetchPolicy,
+  NetworkStatus,
   ObservableQuery,
   OperationVariables,
   QueryOptions,
@@ -27,6 +28,8 @@ export interface QueryHookState<TData>
     'error' | 'errors' | 'loading' | 'partial'
   > {
   data?: TData;
+  // networkStatus is undefined for skipped queries or the ones using suspense
+  networkStatus: NetworkStatus | undefined;
 }
 
 export interface QueryHookOptions<TVariables>
@@ -134,6 +137,10 @@ export function useQuery<TData = any, TVariables = OperationVariables>(
             : result.error,
         errors: result.errors,
         loading: result.loading,
+        // don't try to return `networkStatus` when suspense it's used
+        // because it's unreliable in that case
+        // https://github.com/trojanowski/react-apollo-hooks/pull/68
+        networkStatus: suspend ? undefined : result.networkStatus,
         partial: result.partial,
       };
     },
@@ -186,6 +193,7 @@ export function useQuery<TData = any, TVariables = OperationVariables>(
       data: undefined,
       error: undefined,
       loading: false,
+      networkStatus: undefined,
     };
   }
 
