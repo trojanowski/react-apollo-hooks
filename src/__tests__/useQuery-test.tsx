@@ -140,7 +140,7 @@ function TasksWrapper({ client, ...props }: TasksWrapperProps) {
 
   return (
     <ApolloProvider client={client}>
-      <SuspenseComponent fallback={<>Loading</>}>
+      <SuspenseComponent fallback={<>Loading with suspense</>}>
         <Tasks {...props} />
       </SuspenseComponent>
     </ApolloProvider>
@@ -153,37 +153,6 @@ it('should return the query data', async () => {
   const client = createMockClient();
   const { container } = render(
     <TasksWrapper client={client} query={TASKS_QUERY} />
-  );
-
-  expect(container).toMatchInlineSnapshot(`
-<div>
-  Loading
-</div>
-`);
-
-  await wait();
-
-  expect(container).toMatchInlineSnapshot(`
-<div>
-  <ul>
-    <li>
-      Learn GraphQL
-    </li>
-    <li>
-      Learn React
-    </li>
-    <li>
-      Learn Apollo
-    </li>
-  </ul>
-</div>
-`);
-});
-
-it('should work with suspense disabled', async () => {
-  const client = createMockClient();
-  const { container } = render(
-    <TasksWrapper client={client} suspend={false} query={TASKS_QUERY} />
   );
 
   expect(container).toMatchInlineSnapshot(`
@@ -211,19 +180,15 @@ it('should work with suspense disabled', async () => {
 `);
 });
 
-it('should support query variables', async () => {
+it('should work with suspense enabled', async () => {
   const client = createMockClient();
   const { container } = render(
-    <TasksWrapper
-      client={client}
-      query={FILTERED_TASKS_QUERY}
-      variables={{ completed: true }}
-    />
+    <TasksWrapper client={client} query={TASKS_QUERY} suspend />
   );
 
   expect(container).toMatchInlineSnapshot(`
 <div>
-  Loading
+  Loading with suspense
 </div>
 `);
 
@@ -235,12 +200,59 @@ it('should support query variables', async () => {
     <li>
       Learn GraphQL
     </li>
+    <li>
+      Learn React
+    </li>
+    <li>
+      Learn Apollo
+    </li>
   </ul>
 </div>
 `);
 });
 
-it('should support updating query variables', async () => {
+it.each([false, true])(
+  'should support query variables with with "suspend: %s"',
+  async suspend => {
+    const client = createMockClient();
+    const { container } = render(
+      <TasksWrapper
+        client={client}
+        query={FILTERED_TASKS_QUERY}
+        suspend={suspend}
+        variables={{ completed: true }}
+      />
+    );
+
+    if (suspend) {
+      expect(container).toMatchInlineSnapshot(`
+<div>
+  Loading with suspense
+</div>
+`);
+    } else {
+      expect(container).toMatchInlineSnapshot(`
+<div>
+  Loading without suspense
+</div>
+`);
+    }
+
+    await wait();
+
+    expect(container).toMatchInlineSnapshot(`
+<div>
+  <ul>
+    <li>
+      Learn GraphQL
+    </li>
+  </ul>
+</div>
+`);
+  }
+);
+
+it('should support updating query variables without suspense', async () => {
   const client = createMockClient();
   const { container, rerender } = render(
     <TasksWrapper
@@ -252,7 +264,7 @@ it('should support updating query variables', async () => {
 
   expect(container).toMatchInlineSnapshot(`
 <div>
-  Loading
+  Loading without suspense
 </div>
 `);
 
@@ -278,6 +290,84 @@ it('should support updating query variables', async () => {
 
   expect(container).toMatchInlineSnapshot(`
 <div>
+  Loading without suspense
+</div>
+`);
+
+  await wait();
+
+  expect(container).toMatchInlineSnapshot(`
+<div>
+  <ul>
+    <li>
+      Learn React
+    </li>
+    <li>
+      Learn Apollo
+    </li>
+  </ul>
+</div>
+`);
+
+  rerender(
+    <TasksWrapper
+      client={client}
+      query={FILTERED_TASKS_QUERY}
+      variables={{ completed: true }}
+    />
+  );
+
+  expect(container).toMatchInlineSnapshot(`
+<div>
+  <ul>
+    <li>
+      Learn GraphQL
+    </li>
+  </ul>
+</div>
+`);
+});
+
+it('should support updating query variables with suspense', async () => {
+  const client = createMockClient();
+  const { container, rerender } = render(
+    <TasksWrapper
+      client={client}
+      query={FILTERED_TASKS_QUERY}
+      suspend
+      variables={{ completed: true }}
+    />
+  );
+
+  expect(container).toMatchInlineSnapshot(`
+<div>
+  Loading with suspense
+</div>
+`);
+
+  await wait();
+
+  expect(container).toMatchInlineSnapshot(`
+<div>
+  <ul>
+    <li>
+      Learn GraphQL
+    </li>
+  </ul>
+</div>
+`);
+
+  rerender(
+    <TasksWrapper
+      client={client}
+      query={FILTERED_TASKS_QUERY}
+      suspend
+      variables={{ completed: false }}
+    />
+  );
+
+  expect(container).toMatchInlineSnapshot(`
+<div>
   <ul
     style="display: none;"
   >
@@ -285,12 +375,10 @@ it('should support updating query variables', async () => {
       Learn GraphQL
     </li>
   </ul>
-  Loading
+  Loading with suspense
 </div>
 `);
 
-  // TODO: It doesn't pass if not invoked twice
-  await wait();
   await wait();
 
   expect(container).toMatchInlineSnapshot(`
@@ -335,6 +423,7 @@ it("shouldn't suspend if the data is already cached", async () => {
     <TasksWrapper
       client={client}
       query={FILTERED_TASKS_QUERY}
+      suspend
       variables={{ completed: true }}
     />
   );
@@ -345,6 +434,7 @@ it("shouldn't suspend if the data is already cached", async () => {
     <TasksWrapper
       client={client}
       query={FILTERED_TASKS_QUERY}
+      suspend
       variables={{ completed: false }}
     />
   );
@@ -383,6 +473,7 @@ it("shouldn't allow a query with non-standard fetch policy with suspense", async
       <TasksWrapper
         client={client}
         query={TASKS_QUERY}
+        suspend
         fetchPolicy="cache-and-network"
       />
     )
@@ -439,13 +530,14 @@ it("shouldn't make obsolete renders in suspense mode", async () => {
     <TasksWrapperWithProfiler
       client={client}
       query={FILTERED_TASKS_QUERY}
+      suspend
       variables={{ completed: true }}
     />
   );
 
   expect(container).toMatchInlineSnapshot(`
 <div>
-  Loading
+  Loading with suspense
 </div>
 `);
 
@@ -470,6 +562,7 @@ it("shouldn't make obsolete renders in suspense mode", async () => {
     <TasksWrapperWithProfiler
       client={client}
       query={FILTERED_TASKS_QUERY}
+      suspend
       variables={{ completed: false }}
     />
   );
@@ -483,7 +576,7 @@ it("shouldn't make obsolete renders in suspense mode", async () => {
       Learn GraphQL
     </li>
   </ul>
-  Loading
+  Loading with suspense
 </div>
 `);
 
@@ -512,6 +605,7 @@ it("shouldn't make obsolete renders in suspense mode", async () => {
     <TasksWrapperWithProfiler
       client={client}
       query={FILTERED_TASKS_QUERY}
+      suspend
       variables={{ completed: true }}
     />
   );
@@ -580,7 +674,7 @@ it('skips query in non-suspense mode', async () => {
 it('starts skipped query in suspense mode', async () => {
   const client = createMockClient();
   const { rerender, container } = render(
-    <TasksWrapper client={client} skip query={TASKS_QUERY} />
+    <TasksWrapper client={client} query={TASKS_QUERY} skip suspend />
   );
 
   expect(container).toMatchInlineSnapshot(`
@@ -597,12 +691,14 @@ it('starts skipped query in suspense mode', async () => {
 </div>
 `);
 
-  rerender(<TasksWrapper client={client} skip={false} query={TASKS_QUERY} />);
+  rerender(
+    <TasksWrapper client={client} query={TASKS_QUERY} skip={false} suspend />
+  );
 
   expect(container).toMatchInlineSnapshot(`
 <div>
   
-  Loading
+  Loading with suspense
 </div>
 `);
 
@@ -628,7 +724,7 @@ it('starts skipped query in suspense mode', async () => {
 it('starts skipped query in non-suspense mode', async () => {
   const client = createMockClient();
   const { rerender, container } = render(
-    <TasksWrapper client={client} skip suspend={false} query={TASKS_QUERY} />
+    <TasksWrapper client={client} query={TASKS_QUERY} skip suspend={false} />
   );
 
   expect(container).toMatchInlineSnapshot(`
@@ -687,7 +783,7 @@ it('handles network error in suspense mode', async () => {
 
   expect(container).toMatchInlineSnapshot(`
 <div>
-  Loading
+  Loading with suspense
 </div>
 `);
 
@@ -728,7 +824,7 @@ it('handles GraphQL error in suspense mode', async () => {
 
   expect(container).toMatchInlineSnapshot(`
 <div>
-  Loading
+  Loading with suspense
 </div>
 `);
 
