@@ -2,6 +2,36 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+<a name="0.4.0"></a>
+# [0.4.0](https://github.com/trojanowski/react-apollo-hooks/compare/v0.3.1...v0.4.0) (2019-02-13)
+
+
+### Bug Fixes
+
+* compact watchQueryOptions ([#77](https://github.com/trojanowski/react-apollo-hooks/issues/77)) ([39f59eb](https://github.com/trojanowski/react-apollo-hooks/commit/39f59eb))
+
+
+### Chores
+
+* update React peer dependency to ^16.8.0 ([#78](https://github.com/trojanowski/react-apollo-hooks/issues/78)) ([56abacc](https://github.com/trojanowski/react-apollo-hooks/commit/56abacc))
+
+
+### Features
+
+* **getMarkupFromTree:** add `onBeforeRender` handler ([#64](https://github.com/trojanowski/react-apollo-hooks/issues/64)) ([ba2af83](https://github.com/trojanowski/react-apollo-hooks/commit/ba2af83))
+* **useQuery:** change default value for the `suspend` option to `false` ([#80](https://github.com/trojanowski/react-apollo-hooks/issues/80)) ([8e34e01](https://github.com/trojanowski/react-apollo-hooks/commit/8e34e01))
+* **useQuery:** combine GraphQL errors in single ApolloError ([#58](https://github.com/trojanowski/react-apollo-hooks/issues/58)) ([18afba5](https://github.com/trojanowski/react-apollo-hooks/commit/18afba5))
+* **useQuery:** forward `networkStatus` for queries not using suspense ([fb22d06](https://github.com/trojanowski/react-apollo-hooks/commit/fb22d06))
+
+
+### BREAKING CHANGES
+
+* **useQuery:** The default for the `suspend` option of `useQuery` is changed to `false`, and that hook no longer uses suspense by default. Suspense for data fetching is not recommended yet for production code. Please look at the [issue #69](https://github.com/trojanowski/react-apollo-hooks/issues/69) for details.
+* minimum supported (and tested) version of React is now 16.8.0
+* **useQuery:** if there are GraphQL errors in the response, you'll also have `error` property in the object returned by `useQuery`. It may be breaking for you if you use the presence of it to differentiate between network and GraphQL errors.
+
+
+
 <a name="0.3.1"></a>
 ## [0.3.1](https://github.com/trojanowski/react-apollo-hooks/compare/v0.3.0...v0.3.1) (2019-01-25)
 
