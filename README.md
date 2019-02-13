@@ -154,6 +154,11 @@ const MyComponent = () => (
 );
 ```
 
+There are known issues with suspense mode for `useQuery`:
+
+* only the `cache-first` fetch policy is supported ([#13](https://github.com/trojanowski/react-apollo-hooks/issues/13))
+* `networkStatus` returned by `useQuery` is undefined ([#68](https://github.com/trojanowski/react-apollo-hooks/pull/68))
+
 ## useMutation
 
 ```javascript
