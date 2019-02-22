@@ -94,7 +94,7 @@ const Dogs = () => {
     return <div>Loading...</div>;
   };
   if (error) {
-    return `Error! ${error.message}`;
+    return <div>Error! ${error.message}</div>;
   };
 
   return (
@@ -135,7 +135,7 @@ const GET_DOGS = gql`
 const Dogs = () => {
   const { data, error } = useQuery(GET_DOGS, { suspend: true });
   if (error) {
-    return `Error! ${error.message}`;
+    return <div>Error! ${error.message}</div>;
   }
 
   return (
