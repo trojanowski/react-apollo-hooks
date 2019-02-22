@@ -225,6 +225,57 @@ function TasksWithMutation() {
 }
 ```
 
+## useSubscription
+
+If you are just interested in the last subscription value sent by the
+server (e. g. a global indicator showing how many new messages you have in an
+instant messenger app) you can use `useSubscription` hook in this form:
+
+```javascript
+const NEW_MESSAGES_COUNT_CHANGED_SUBSCRIPTION = gql`
+  subscription onNewMessagesCountChanged($repoFullName: String!) {
+    newMessagesCount
+  }
+`;
+
+const NewMessagesIndicator = () => {
+  const { data, error, loading } = useSubscription(
+    NEW_MESSAGES_COUNT_CHANGED_SUBSCRIPTION
+  );
+
+  if (loading) {
+    return <div>Loading...</div>;
+  };
+
+  if (error) {
+    return <div>Error! {error.message}`</div>;
+  };
+
+  return <div>{data.newMessagesCount} new messages</div>;
+}
+```
+
+For more advanced use cases, e. g. when you'd like to show a notification
+to the user or modify the Apollo cache (e. g. you'd like to show a new comment
+on a blog post page for a user visiting it just after it was created) you can
+use the `onSubscriptionData` callback:
+
+```javascript
+const { data, error, loading } = useSubscription(MY_SUBSCRIPTION, {
+  variables: {
+    // ...
+  },
+  onSubscriptionData: ({ client, subscriptionData }) => {
+    // Optional callback which provides you access to the new subscription
+    // data and the Apollo client. You can use methods of the client to update
+    // the Apollo cache:
+    // https://www.apollographql.com/docs/react/advanced/caching.html#direct
+  }
+  // ... rest options
+});
+```
+
+
 ## useApolloClient
 
 ```javascript
