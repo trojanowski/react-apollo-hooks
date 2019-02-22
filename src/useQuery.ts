@@ -47,7 +47,7 @@ export interface QueryHookResult<TData, TVariables>
   extends QueryHookState<TData>,
     Pick<
       ObservableQuery<TData, TVariables>,
-      'refetch' | 'startPolling' | 'stopPolling' | 'updateQuery'
+      'refetch' | 'startPolling' | 'stopPolling' | 'updateQuery' | 'subscribeToMore'
     > {
   fetchMore<K extends keyof TVariables>(
     fetchMoreOptions: FetchMoreQueryOptions<TVariables, K> &
@@ -179,6 +179,7 @@ export function useQuery<TData = any, TVariables = OperationVariables>(
   ensureSupportedFetchPolicy(suspend, fetchPolicy);
 
   const helpers = {
+    subscribeToMore: observableQuery.subscribeToMore.bind(observableQuery),
     fetchMore: observableQuery.fetchMore.bind(observableQuery),
     refetch: observableQuery.refetch.bind(observableQuery),
     startPolling: observableQuery.startPolling.bind(observableQuery),
