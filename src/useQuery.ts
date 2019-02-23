@@ -25,9 +25,10 @@ import { Omit, compact, objToKey } from './utils';
 export interface QueryHookState<TData>
   extends Pick<
     ApolloCurrentResult<undefined | TData>,
-    'error' | 'errors' | 'loading' | 'partial' | 'stale'
+    'error' | 'errors' | 'loading' | 'partial'
   > {
   data?: TData;
+  stale: boolean;
   // networkStatus is undefined for skipped queries or the ones using suspense
   networkStatus: NetworkStatus | undefined;
 }
