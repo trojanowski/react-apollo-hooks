@@ -128,6 +128,7 @@ export function useQuery<TData = any, TVariables = OperationVariables>(
 
   const currentResult = useMemo<QueryHookState<TData>>(
     () => {
+      const justLoadedFromCache = !observableQuery.lastResult;
       const result = observableQuery.currentResult();
 
       return {
@@ -143,7 +144,7 @@ export function useQuery<TData = any, TVariables = OperationVariables>(
         // https://github.com/trojanowski/react-apollo-hooks/pull/68
         networkStatus: suspend ? undefined : result.networkStatus,
         partial: result.partial,
-        stale: result.stale
+        stale: result.data && (result.loading || justLoadedFromCache)
       };
     },
     [shouldSkip, responseId, observableQuery]
