@@ -25,7 +25,7 @@ import { Omit, compact, objToKey } from './utils';
 export interface QueryHookState<TData>
   extends Pick<
     ApolloCurrentResult<undefined | TData>,
-    'error' | 'errors' | 'loading' | 'partial'
+    'error' | 'errors' | 'loading' | 'partial' | 'stale'
   > {
   data?: TData;
   // networkStatus is undefined for skipped queries or the ones using suspense
@@ -142,6 +142,7 @@ export function useQuery<TData = any, TVariables = OperationVariables>(
         // https://github.com/trojanowski/react-apollo-hooks/pull/68
         networkStatus: suspend ? undefined : result.networkStatus,
         partial: result.partial,
+        stale: result.stale
       };
     },
     [shouldSkip, responseId, observableQuery]
