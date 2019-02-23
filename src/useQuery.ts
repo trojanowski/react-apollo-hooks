@@ -144,7 +144,7 @@ export function useQuery<TData = any, TVariables = OperationVariables>(
         // https://github.com/trojanowski/react-apollo-hooks/pull/68
         networkStatus: suspend ? undefined : result.networkStatus,
         partial: result.partial,
-        stale: result.data && (result.loading || justLoadedFromCache)
+        stale: Object.keys(result.data).length > 0 && (result.loading || justLoadedFromCache)
       };
     },
     [shouldSkip, responseId, observableQuery]
