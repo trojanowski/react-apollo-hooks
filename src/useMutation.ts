@@ -23,6 +23,7 @@ export type MutationUpdaterFn<TData = Record<string, any>> = (
 export interface BaseMutationHookOptions<TData, TVariables>
   extends Omit<MutationOptions<TData, TVariables>, 'mutation' | 'update'> {
   update?: MutationUpdaterFn<TData>;
+  throwAsync?: boolean;
 }
 
 export interface MutationHookOptions<TData, TVariables, TCache = object>
@@ -58,6 +59,17 @@ export function useMutation<TData, TVariables = OperationVariables>(
     error: undefined,
     loading: false,
   });
+
+  const { throwAsync = false, ...options } = baseOptions;
+
+  React.useEffect(
+    () => {
+      if (result.error && !throwAsync) {
+        throw result.error;
+      }
+    },
+    [throwAsync, result.error]
+  );
 
   const { generateNewMutationId, isMostRecentMutation } = useMutationTracking();
 
@@ -103,21 +115,21 @@ export function useMutation<TData, TVariables = OperationVariables>(
   };
 
   const runMutation = React.useCallback(
-    async (options: MutationHookOptions<TData, TVariables> = {}) => {
+    async (mutateOptions: MutationHookOptions<TData, TVariables> = {}) => {
       onMutationStart();
       const mutationId = generateNewMutationId();
 
       try {
         // merge together variables from baseOptions (if specified)
         // and the execution
-        const mutateVariables = baseOptions.variables
-          ? { ...options.variables, ...baseOptions.variables }
-          : options.variables;
+        const mutateVariables = options.variables
+          ? { ...mutateOptions.variables, ...options.variables }
+          : mutateOptions.variables;
 
         const response = await client.mutate({
           mutation,
-          ...baseOptions,
           ...options,
+          ...mutateOptions,
           variables: mutateVariables,
         });
 
@@ -125,7 +137,10 @@ export function useMutation<TData, TVariables = OperationVariables>(
         return response as ExecutionResult<TData>;
       } catch (err) {
         onMutationError(err, mutationId);
-        throw err;
+        if (throwAsync) {
+          throw err;
+        }
+        return ({} as unknown) as ExecutionResult<TData>;
       }
     },
     [client, mutation, baseOptions]
