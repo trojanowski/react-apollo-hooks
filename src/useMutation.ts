@@ -102,33 +102,34 @@ export function useMutation<TData, TVariables = OperationVariables>(
     }
   };
 
-  const runMutation = async (
-    options: MutationHookOptions<TData, TVariables> = {}
-  ) => {
-    onMutationStart();
-    const mutationId = generateNewMutationId();
+  const runMutation = React.useCallback(
+    async (options: MutationHookOptions<TData, TVariables> = {}) => {
+      onMutationStart();
+      const mutationId = generateNewMutationId();
 
-    try {
-      // merge together variables from baseOptions (if specified)
-      // and the execution
-      const mutateVariables = baseOptions.variables
-        ? { ...options.variables, ...baseOptions.variables }
-        : options.variables;
+      try {
+        // merge together variables from baseOptions (if specified)
+        // and the execution
+        const mutateVariables = baseOptions.variables
+          ? { ...options.variables, ...baseOptions.variables }
+          : options.variables;
 
-      const response = await client.mutate({
-        mutation,
-        ...baseOptions,
-        ...options,
-        variables: mutateVariables,
-      });
+        const response = await client.mutate({
+          mutation,
+          ...baseOptions,
+          ...options,
+          variables: mutateVariables,
+        });
 
-      onMutationCompleted(response, mutationId);
-      return response as ExecutionResult<TData>;
-    } catch (err) {
-      onMutationError(err, mutationId);
-      throw err;
-    }
-  };
+        onMutationCompleted(response, mutationId);
+        return response as ExecutionResult<TData>;
+      } catch (err) {
+        onMutationError(err, mutationId);
+        throw err;
+      }
+    },
+    [client, mutation, baseOptions]
+  );
 
   return [runMutation, result];
 }
