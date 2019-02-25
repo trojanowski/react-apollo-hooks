@@ -1,4 +1,4 @@
-import {
+import ApolloClient, {
   ApolloCurrentResult,
   ApolloError,
   ApolloQueryResult,
@@ -32,12 +32,13 @@ export interface QueryHookState<TData>
   networkStatus: NetworkStatus | undefined;
 }
 
-export interface QueryHookOptions<TVariables>
+export interface QueryHookOptions<TVariables, TCache = object>
   extends Omit<QueryOptions<TVariables>, 'query'> {
   // watch query options from apollo client
   notifyOnNetworkStatusChange?: boolean;
   pollInterval?: number;
   // custom options of `useQuery` hook
+  client?: ApolloClient<TCache>;
   ssr?: boolean;
   skip?: boolean;
   suspend?: boolean;
@@ -55,7 +56,11 @@ export interface QueryHookResult<TData, TVariables>
   ): Promise<ApolloQueryResult<TData>>;
 }
 
-export function useQuery<TData = any, TVariables = OperationVariables>(
+export function useQuery<
+  TData = any,
+  TVariables = OperationVariables,
+  TCache = object
+>(
   query: DocumentNode,
   {
     // Hook options
@@ -68,15 +73,16 @@ export function useQuery<TData = any, TVariables = OperationVariables>(
     notifyOnNetworkStatusChange = false,
 
     // Apollo client options
+    client: overrideClient,
     context,
     metadata,
     variables,
     fetchPolicy: actualCachePolicy,
     errorPolicy,
     fetchResults,
-  }: QueryHookOptions<TVariables> = {}
+  }: QueryHookOptions<TVariables, TCache> = {}
 ): QueryHookResult<TData, TVariables> {
-  const client = useApolloClient();
+  const client = useApolloClient(overrideClient);
   const ssrManager = useContext(SSRContext);
   const ssrInUse = ssr && ssrManager;
 
