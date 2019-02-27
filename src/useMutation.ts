@@ -48,6 +48,27 @@ export interface ExecutionResult<T = Record<string, any>> {
   errors?: GraphQLError[];
 }
 
+export class ApolloMutationError<TData, TVariables> extends ApolloError {
+  public mutation: DocumentNode;
+  public mutationOptions: MutationHookOptions<TData, TVariables>;
+
+  constructor(
+    apolloError: ApolloError,
+    mutation: DocumentNode,
+    mutationOptions: MutationHookOptions<TData, TVariables>
+  ) {
+    super({ ...apolloError });
+    this.mutation = mutation;
+    this.mutationOptions = mutationOptions;
+  }
+}
+
+export function isMutationError<TData, TVariables>(
+  err: Error
+): err is ApolloMutationError<TData, TVariables> {
+  return err.hasOwnProperty('mutation');
+}
+
 export function useMutation<TData, TVariables = OperationVariables>(
   mutation: DocumentNode,
   baseOptions: MutationHookOptions<TData, TVariables> = {}
@@ -108,7 +129,7 @@ export function useMutation<TData, TVariables = OperationVariables>(
     if (isMostRecentMutation(mutationId)) {
       setResult(prev => ({
         ...prev,
-        error,
+        error: new ApolloMutationError(error, mutation, baseOptions),
         loading: false,
       }));
     }
