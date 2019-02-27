@@ -22,6 +22,7 @@ export interface OnSubscriptionDataOptions<TData> {
 
 export interface SubscriptionHookOptions<TData, TVariables>
   extends Omit<SubscriptionOptions<TVariables>, 'query'> {
+  skip?: boolean;
   onSubscriptionData?: OnSubscriptionData<TData>;
 }
 
@@ -57,6 +58,9 @@ export function useSubscription<TData = any, TVariables = OperationVariables>(
 
   useEffect(
     () => {
+      if (options.skip === true) {
+        return;
+      }
       const subscription = client
         .subscribe({
           ...options,

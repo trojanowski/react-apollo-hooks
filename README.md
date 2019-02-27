@@ -275,6 +275,9 @@ const { data, error, loading } = useSubscription(MY_SUBSCRIPTION, {
 });
 ```
 
+In some cases you might want to subscribe only after you have all the information available, eg. only when user has selected necessary filters. Since hooks cannot be used conditionally, it would lead to unnecessary complicated patterns.
+
+Instead, you can use the `skip` option which turns the subsciption dormant until toggled again. It will also unsubscribe if there was any previous subscription active and throw away previous result.
 
 ## useApolloClient
 
