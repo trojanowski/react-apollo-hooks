@@ -3,7 +3,7 @@ import { Operation } from 'apollo-link';
 import { MockSubscriptionLink } from 'apollo-link-mock';
 import gql from 'graphql-tag';
 import React from 'react';
-import { cleanup, render } from 'react-testing-library';
+import { act, cleanup, render } from 'react-testing-library';
 
 import { ApolloProvider, useSubscription } from '..';
 import createClient from '../__testutils__/createClient';
@@ -326,4 +326,40 @@ it('should re-subscription if variables have changed', async () => {
   await wait();
 
   expect(count).toBe(5);
+});
+
+it('should not subscribe if skip option is enabled', async () => {
+  const variables = { completed: true };
+
+  class MockSubscriptionLinkOverride extends MockSubscriptionLink {
+    request(req: Operation) {
+      expect(req.variables).toEqual(variables);
+      return super.request(req);
+    }
+  }
+
+  const link = new MockSubscriptionLinkOverride();
+
+  const client = createClient({ link });
+
+  const Component = () => {
+    const { data, loading, error } = useSubscription(
+      FILTERED_TASKS_SUBSCRIPTION,
+      { variables, skip: true }
+    );
+    expect(loading).toBe(true);
+    expect(error).toBeUndefined();
+    expect(data).toBeUndefined();
+    return null;
+  };
+
+  render(
+    <ApolloProvider client={client}>
+      <Component />
+    </ApolloProvider>
+  );
+
+  act(() => {
+    link.simulateResult(complitedResults[0]);
+  });
 });
