@@ -20,10 +20,11 @@ export interface OnSubscriptionDataOptions<TData> {
   subscriptionData: SubscriptionHookResult<TData>;
 }
 
-export interface SubscriptionHookOptions<TData, TVariables>
+export interface SubscriptionHookOptions<TData, TVariables, TCache = object>
   extends Omit<SubscriptionOptions<TVariables>, 'query'> {
   skip?: boolean;
   onSubscriptionData?: OnSubscriptionData<TData>;
+  client?: ApolloClient<TCache>;
 }
 
 export interface SubscriptionHookResult<TData> {
@@ -32,14 +33,19 @@ export interface SubscriptionHookResult<TData> {
   loading: boolean;
 }
 
-export function useSubscription<TData = any, TVariables = OperationVariables>(
+export function useSubscription<
+  TData = any,
+  TVariables = OperationVariables,
+  TCache = object
+>(
   query: DocumentNode,
   {
     onSubscriptionData,
+    client: overrideClient,
     ...options
-  }: SubscriptionHookOptions<TData, TVariables> = {}
+  }: SubscriptionHookOptions<TData, TVariables, TCache> = {}
 ): SubscriptionHookResult<TData> {
-  const client = useApolloClient();
+  const client = useApolloClient(overrideClient);
   const onSubscriptionDataRef = useRef<
     OnSubscriptionData<TData> | null | undefined
   >(null);

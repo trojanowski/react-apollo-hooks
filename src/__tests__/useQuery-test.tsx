@@ -130,7 +130,7 @@ function Tasks({ query, ...options }: TasksProps) {
 }
 
 interface TasksWrapperProps extends TasksProps {
-  client: ApolloClient<object>;
+  client?: ApolloClient<object>;
 }
 
 const SuspenseCompat = ({ children }: SuspenseProps) => <>{children}</>;
@@ -138,13 +138,17 @@ const SuspenseCompat = ({ children }: SuspenseProps) => <>{children}</>;
 function TasksWrapper({ client, ...props }: TasksWrapperProps) {
   const SuspenseComponent = props.suspend !== false ? Suspense : SuspenseCompat;
 
-  return (
-    <ApolloProvider client={client}>
-      <SuspenseComponent fallback={<>Loading with suspense</>}>
-        <Tasks {...props} />
-      </SuspenseComponent>
-    </ApolloProvider>
+  const inner = (
+    <SuspenseComponent fallback={<>Loading with suspense</>}>
+      <Tasks {...props} />
+    </SuspenseComponent>
   );
+
+  if (client) {
+    return <ApolloProvider client={client}>{inner}</ApolloProvider>;
+  }
+
+  return inner;
 }
 
 afterEach(cleanup);
@@ -153,6 +157,37 @@ it('should return the query data', async () => {
   const client = createMockClient();
   const { container } = render(
     <TasksWrapper client={client} query={TASKS_QUERY} />
+  );
+
+  expect(container).toMatchInlineSnapshot(`
+<div>
+  Loading without suspense
+</div>
+`);
+
+  await wait();
+
+  expect(container).toMatchInlineSnapshot(`
+<div>
+  <ul>
+    <li>
+      Learn GraphQL
+    </li>
+    <li>
+      Learn React
+    </li>
+    <li>
+      Learn Apollo
+    </li>
+  </ul>
+</div>
+`);
+});
+
+it('should accept a client option', async () => {
+  const client = createMockClient();
+  const { container } = render(
+    <TasksWrapper query={TASKS_QUERY} client={client} />
   );
 
   expect(container).toMatchInlineSnapshot(`
