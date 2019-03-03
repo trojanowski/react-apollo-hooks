@@ -6,10 +6,12 @@ import ApolloClient, {
 } from 'apollo-client';
 import { FetchResult } from 'apollo-link';
 import { DocumentNode, GraphQLError } from 'graphql';
+import actHack from './internal/actHack';
 
 import React from 'react';
 import { useApolloClient } from './ApolloContext';
-import { Omit } from './utils';
+import { ApolloMutationError } from './ApolloMutationError';
+import { Omit, objToKey } from './utils';
 
 export type MutationUpdaterFn<TData = Record<string, any>> = (
   proxy: DataProxy,
@@ -23,7 +25,7 @@ export type MutationUpdaterFn<TData = Record<string, any>> = (
 export interface BaseMutationHookOptions<TData, TVariables>
   extends Omit<MutationOptions<TData, TVariables>, 'mutation' | 'update'> {
   update?: MutationUpdaterFn<TData>;
-  throwAsync?: boolean;
+  throwMode?: 'none' | 'sync' | 'async';
 }
 
 export interface MutationHookOptions<TData, TVariables, TCache = object>
@@ -35,72 +37,83 @@ export type MutationFn<TData, TVariables> = (
   options?: BaseMutationHookOptions<TData, TVariables>
 ) => Promise<FetchResult<TData>>;
 
-export interface MutationResult<TData> {
-  called: boolean;
-  data?: TData;
-  error?: ApolloError;
-  loading: boolean;
-}
-
 export interface ExecutionResult<T = Record<string, any>> {
   data?: T;
   extensions?: Record<string, any>;
   errors?: GraphQLError[];
 }
 
-export class ApolloMutationError<TData, TVariables> extends ApolloError {
-  public mutation: DocumentNode;
-  public mutationOptions: MutationHookOptions<TData, TVariables>;
-
-  constructor(
-    apolloError: ApolloError,
-    mutation: DocumentNode,
-    mutationOptions: MutationHookOptions<TData, TVariables>
-  ) {
-    super({ ...apolloError });
-    this.mutation = mutation;
-    this.mutationOptions = mutationOptions;
-  }
+export interface MutationResult<TData> {
+  called: boolean;
+  data?: TData;
+  error?: ApolloError;
+  hasError: boolean;
+  loading: boolean;
 }
 
-export function isMutationError<TData, TVariables>(
-  err: Error
-): err is ApolloMutationError<TData, TVariables> {
-  return err.hasOwnProperty('mutation');
-}
+const getInitialState = (): MutationResult<any> => ({
+  called: false,
+  data: undefined,
+  error: undefined,
+  hasError: false,
+  loading: false,
+});
 
 export function useMutation<TData, TVariables = OperationVariables>(
   mutation: DocumentNode,
   baseOptions: MutationHookOptions<TData, TVariables> = {}
 ): [MutationFn<TData, TVariables>, MutationResult<TData>] {
   const client = useApolloClient(baseOptions.client);
-  const [result, setResult] = React.useState<MutationResult<TData>>({
-    called: false,
-    data: undefined,
-    error: undefined,
-    loading: false,
-  });
+  const [result, setResult] = React.useState<MutationResult<TData>>(
+    getInitialState
+  );
 
-  const { throwAsync = false, ...options } = baseOptions;
+  const { throwMode = 'async', ...options } = baseOptions;
 
   React.useEffect(
     () => {
-      if (result.error && !throwAsync) {
+      if (throwMode === 'sync' && result.error) {
         throw result.error;
       }
     },
-    [throwAsync, result.error]
+    [throwMode, result.error]
+  );
+
+  // reset state if client instance changes
+  React.useLayoutEffect(
+    () => {
+      setResult(getInitialState);
+    },
+    [client]
   );
 
   const { generateNewMutationId, isMostRecentMutation } = useMutationTracking();
 
   const onMutationStart = () => {
     if (!result.loading) {
-      setResult({
-        called: true,
-        data: undefined,
-        error: undefined,
-        loading: true,
+      // A hack to get rid React warnings during tests.
+      actHack(() => {
+        setResult({
+          called: true,
+          data: undefined,
+          error: undefined,
+          hasError: false,
+          loading: true,
+        });
+      });
+    }
+  };
+
+  const onMutationError = (error: ApolloError, mutationId: number) => {
+    if (isMostRecentMutation(mutationId)) {
+      // A hack to get rid React warnings during tests.
+      actHack(() => {
+        setResult(prev => ({
+          ...prev,
+          error: new ApolloMutationError(error, mutation, baseOptions),
+          hasError: true,
+          loading: false,
+        }));
       });
     }
   };
@@ -110,28 +123,20 @@ export function useMutation<TData, TVariables = OperationVariables>(
     mutationId: number
   ) => {
     const { data, errors } = response;
-    const error =
-      errors && errors.length > 0
-        ? new ApolloError({ graphQLErrors: errors })
-        : undefined;
-
-    if (isMostRecentMutation(mutationId)) {
-      setResult(prev => ({
-        ...prev,
-        data,
-        error,
-        loading: false,
-      }));
+    if (errors && errors.length > 0) {
+      onMutationError(new ApolloError({ graphQLErrors: errors }), mutationId);
+      return;
     }
-  };
 
-  const onMutationError = (error: ApolloError, mutationId: number) => {
     if (isMostRecentMutation(mutationId)) {
-      setResult(prev => ({
-        ...prev,
-        error: new ApolloMutationError(error, mutation, baseOptions),
-        loading: false,
-      }));
+      // A hack to get rid React warnings during tests.
+      actHack(() => {
+        setResult(prev => ({
+          ...prev,
+          data,
+          loading: false,
+        }));
+      });
     }
   };
 
@@ -158,13 +163,13 @@ export function useMutation<TData, TVariables = OperationVariables>(
         return response as ExecutionResult<TData>;
       } catch (err) {
         onMutationError(err, mutationId);
-        if (throwAsync) {
+        if (throwMode === 'async') {
           throw err;
         }
         return ({} as unknown) as ExecutionResult<TData>;
       }
     },
-    [client, mutation, baseOptions]
+    [client, mutation, baseOptions, objToKey(baseOptions)]
   );
 
   return [runMutation, result];

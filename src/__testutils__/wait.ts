@@ -1,5 +1,5 @@
-export default function wait(): Promise<void> {
+export default function wait(ms: number = 10): Promise<void> {
   return new Promise(resolve => {
-    return setTimeout(resolve, 10);
+    return setTimeout(resolve, ms);
   });
 }
