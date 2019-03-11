@@ -141,33 +141,36 @@ export function useMutation<TData, TVariables = OperationVariables>(
   };
 
   const runMutation = React.useCallback(
-    async (mutateOptions: MutationHookOptions<TData, TVariables> = {}) => {
-      onMutationStart();
-      const mutationId = generateNewMutationId();
+    (mutateOptions: MutationHookOptions<TData, TVariables> = {}) => {
+      return new Promise((resolve, reject) => {
+        onMutationStart();
+        const mutationId = generateNewMutationId();
 
-      try {
         // merge together variables from baseOptions (if specified)
         // and the execution
         const mutateVariables = options.variables
           ? { ...mutateOptions.variables, ...options.variables }
           : mutateOptions.variables;
 
-        const response = await client.mutate({
-          mutation,
-          ...options,
-          ...mutateOptions,
-          variables: mutateVariables,
-        });
-
-        onMutationCompleted(response, mutationId);
-        return response as ExecutionResult<TData>;
-      } catch (err) {
-        onMutationError(err, mutationId);
-        if (throwMode === 'async') {
-          throw err;
-        }
-        return ({} as unknown) as ExecutionResult<TData>;
-      }
+        client
+          .mutate({
+            mutation,
+            ...options,
+            ...mutateOptions,
+            variables: mutateVariables,
+          })
+          .then(response => {
+            onMutationCompleted(response, mutationId);
+            resolve(response as ExecutionResult<TData>);
+          })
+          .catch(err => {
+            onMutationError(err, mutationId);
+            if (throwMode === 'async') {
+              reject(err);
+            }
+            resolve(({} as unknown) as ExecutionResult<TData>);
+          });
+      });
     },
     [client, mutation, baseOptions, objToKey(baseOptions)]
   );
