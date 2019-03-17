@@ -5,7 +5,8 @@ import ApolloClient, {
 } from 'apollo-client';
 import { FetchResult } from 'apollo-link';
 import { DocumentNode } from 'graphql';
-import { useCallback } from 'react';
+import { isEqual } from 'lodash';
+import { useCallback, useRef } from 'react';
 
 import { useApolloClient } from './ApolloContext';
 import { Omit } from './utils';
@@ -46,8 +47,14 @@ export function useMutation<
 ): MutationFn<TData, TVariables> {
   const client = useApolloClient(overrideClient);
 
+  const baseOptionsRef = useRef(baseOptions);
+  if (!isEqual(baseOptionsRef.current, baseOptions)) {
+    baseOptionsRef.current = baseOptions;
+  }
+
   return useCallback(
-    options => client.mutate({ mutation, ...baseOptions, ...options }),
-    [client, mutation, baseOptions]
+    options =>
+      client.mutate({ mutation, ...baseOptionsRef.current, ...options }),
+    [client, mutation, baseOptionsRef.current]
   );
 }
