@@ -9,6 +9,11 @@ Use [Apollo Client](https://github.com/apollographql/apollo-client) as React
 
 `npm install react-apollo-hooks`
 
+If using yarn
+
+
+`yarn add react-apollo-hooks`
+
 # Example
 
 <https://codesandbox.io/s/8819w85jn9> is a port of Pupstagram sample app to
