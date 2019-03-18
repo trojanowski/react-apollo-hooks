@@ -54,7 +54,7 @@ export function useMutation<
 
   const mutationFn: MutationFn<TData, TVariables> = useCallback(
     options =>
-      client.mutate({ mutation, ...baseOptionsRef.current, ...options }),
+      client.mutate({ mutation, ...baseOptionsRef.current!, ...options }),
     [client, mutation, baseOptionsRef.current]
   );
 
