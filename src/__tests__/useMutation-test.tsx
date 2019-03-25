@@ -1,5 +1,4 @@
 import gql from 'graphql-tag';
-import mockConsole from 'jest-mock-console';
 import React from 'react';
 import {
   act,
