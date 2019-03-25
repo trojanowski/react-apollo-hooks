@@ -135,8 +135,17 @@ export function useQuery<
     () => {
       const result = observableQuery.currentResult();
 
+      // return the old result data when there is an error
+      let data = result.data as TData;
+      if (result.error || result.errors) {
+        data = {
+          ...result.data,
+          ...(observableQuery.getLastResult() || {}).data,
+        };
+      }
+
       return {
-        data: result.data as TData,
+        data,
         error:
           result.errors && result.errors.length > 0
             ? new ApolloError({ graphQLErrors: result.errors })
