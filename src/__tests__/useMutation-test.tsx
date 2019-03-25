@@ -11,8 +11,8 @@ import {
 
 import { GraphQLError } from 'graphql';
 import { ApolloProvider, useMutation, useQuery } from '..';
-import { ApolloMutationError, isMutationError } from '../ApolloMutationError';
-import { BasicErrorHandler } from '../BasicErrorHandler';
+import { ApolloOperationError, isMutationError } from '../ApolloOperationError';
+import { SillyErrorBoundary } from '../SillyErrorBoundary';
 import createClient from '../__testutils__/createClient';
 import { SAMPLE_TASKS } from '../__testutils__/data';
 import noop from '../__testutils__/noop';
@@ -348,7 +348,7 @@ it('should provide error and hasError properties for network error', async () =>
   const { result } = testHook(
     () =>
       useMutation<any, { input: Partial<TaskFragment> }>(ADD_TASK_MUTATION, {
-        throwMode: 'none',
+        rethrow: false,
         variables: {
           input: {
             text: 'Learn Jest',
@@ -375,7 +375,7 @@ it('should provide error and hasError properties for network error', async () =>
   const [, calledState] = result.current;
   expect(calledState.hasError).toBe(true);
   expect(isMutationError(calledState.error!)).toBe(true);
-  expect((calledState.error! as ApolloMutationError).mutation).toBe(
+  expect((calledState.error! as ApolloOperationError).operationDoc).toBe(
     ADD_TASK_MUTATION
   );
   expect(calledState.error!.message).toMatchInlineSnapshot(
@@ -406,7 +406,7 @@ it('should provide error and hasError properties for graphql errors', async () =
   const { result } = testHook(
     () =>
       useMutation<any, { input: Partial<TaskFragment> }>(ADD_TASK_MUTATION, {
-        throwMode: 'none',
+        rethrow: false,
         variables: {
           input: {
             text: 'Learn Jest',
@@ -433,7 +433,7 @@ it('should provide error and hasError properties for graphql errors', async () =
   const [, calledState] = result.current;
   expect(calledState.hasError).toBe(true);
   expect(isMutationError(calledState.error!)).toBe(true);
-  expect((calledState.error! as ApolloMutationError).mutation).toBe(
+  expect((calledState.error! as ApolloOperationError).operationDoc).toBe(
     ADD_TASK_MUTATION
   );
   expect(calledState.error!.graphQLErrors).toMatchInlineSnapshot(`
@@ -453,7 +453,7 @@ Array [
   expect(laterState.hasError).toBe(true);
 });
 
-it('should not throw error with throwMode = none', async () => {
+it('should not throw error with rethrow = false', async () => {
   const mocks = [
     { ...ADD_TASK_MUTATION_MOCK, error: new Error('Network has failed') },
   ];
@@ -464,7 +464,7 @@ it('should not throw error with throwMode = none', async () => {
   const { result } = testHook(
     () =>
       useMutation<any, { input: Partial<TaskFragment> }>(ADD_TASK_MUTATION, {
-        throwMode: 'none',
+        rethrow: false,
         variables: {
           input: {
             text: 'Learn Jest',
@@ -474,7 +474,7 @@ it('should not throw error with throwMode = none', async () => {
     {
       wrapper: ({ children }) => (
         <ApolloProvider client={client}>
-          <BasicErrorHandler onError={onError}>{children}</BasicErrorHandler>
+          <SillyErrorBoundary onError={onError}>{children}</SillyErrorBoundary>
         </ApolloProvider>
       ),
     }
@@ -495,7 +495,7 @@ it('should not throw error with throwMode = none', async () => {
   expect(onError).toHaveBeenCalledTimes(0);
 });
 
-it('should throw error asynchronously with throwMode = async', async () => {
+it('should throw error asynchronously with rethrow = true', async () => {
   const mocks = [ADD_TASK_MUTATION_MOCK];
   const client = createClient({ mocks });
 
@@ -504,7 +504,6 @@ it('should throw error asynchronously with throwMode = async', async () => {
   const { result } = testHook(
     () =>
       useMutation<any, { input: Partial<TaskFragment> }>(ADD_TASK_MUTATION, {
-        throwMode: 'async',
         variables: {
           input: {
             text: 'I am the error',
@@ -514,7 +513,7 @@ it('should throw error asynchronously with throwMode = async', async () => {
     {
       wrapper: ({ children }) => (
         <ApolloProvider client={client}>
-          <BasicErrorHandler onError={onError}>{children}</BasicErrorHandler>
+          <SillyErrorBoundary onError={onError}>{children}</SillyErrorBoundary>
         </ApolloProvider>
       ),
     }
@@ -531,50 +530,4 @@ it('should throw error asynchronously with throwMode = async', async () => {
 
   expect(caughtError).toBeTruthy();
   expect(onError).toHaveBeenCalledTimes(0);
-});
-
-it('should throw error synchronously with throwMode = sync', async () => {
-  const mocks = [
-    { ...ADD_TASK_MUTATION_MOCK, error: new Error('Network has failed') },
-  ];
-  const client = createClient({ mocks });
-
-  const onError = jest.fn();
-
-  const { result } = testHook(
-    () =>
-      useMutation<any, { input: Partial<TaskFragment> }>(ADD_TASK_MUTATION, {
-        throwMode: 'sync',
-        variables: {
-          input: {
-            text: 'Learn Jest',
-          },
-        },
-      }),
-    {
-      wrapper: ({ children }) => (
-        <ApolloProvider client={client}>
-          <BasicErrorHandler onError={onError}>{children}</BasicErrorHandler>
-        </ApolloProvider>
-      ),
-    }
-  );
-
-  const [addTask] = result.current;
-
-  let caughtError;
-  try {
-    // this is necessary because of this: https://github.com/facebook/react/issues/10474
-    const restoreConsole = mockConsole();
-    await addTask();
-    restoreConsole();
-  } catch (err) {
-    caughtError = err;
-  }
-
-  expect(caughtError).toBeFalsy();
-  expect(onError).toHaveBeenCalledTimes(1);
-  expect(onError.mock.calls[0][0]).toMatchInlineSnapshot(
-    `[Error: Network error: Network has failed]`
-  );
 });

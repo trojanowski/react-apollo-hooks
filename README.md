@@ -172,17 +172,19 @@ const TOGGLE_LIKED_PHOTO = gql`
 `;
 
 const DogWithLikes = ({ url, imageId, isLiked }) => {
-  const toggleLike = useMutation(TOGGLE_LIKED_PHOTO, {
+  const [toggleLike, { loading }] = useMutation(TOGGLE_LIKED_PHOTO, {
     variables: { id: imageId },
   });
   return (
     <div>
       <img src={url} />
-      <button onClick={toggleLike}>{isLiked ? 'Stop liking' : 'like'}</button>
+      <button onClick={toggleLike} disabled={loading}>{isLiked ? 'Stop liking' : 'like'}</button>
     </div>
   );
 };
 ```
+
+The `useMutation` returns a tuple with mutation function first and the result of mutation execution in second. It's a similar signature you might know from official [Mutation component](https://www.apollographql.com/docs/react/essentials/mutations.html#errors) and the same behavior as well.
 
 You can provide any
 [mutation options](https://www.apollographql.com/docs/react/api/apollo-client.html#ApolloClient.mutate)
@@ -192,7 +194,7 @@ g.:
 ```javascript
 function AddTaskForm() {
   const inputRef = useRef();
-  const addTask = useMutation(ADD_TASK_MUTATION, {
+  const [addTask] = useMutation(ADD_TASK_MUTATION, {
     update: (proxy, mutationResult) => {
       /* your custom update logic */
     },
@@ -214,7 +216,7 @@ Or:
 
 ```javascript
 function TasksWithMutation() {
-  const toggleTask = useMutation(TOGGLE_TASK_MUTATION);
+  const [toggleTask] = useMutation(TOGGLE_TASK_MUTATION);
 
   return (
     <TaskList
