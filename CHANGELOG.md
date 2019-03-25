@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+<a name="0.4.4"></a>
+## [0.4.4](https://github.com/trojanowski/react-apollo-hooks/compare/v0.4.3...v0.4.4) (2019-03-25)
+
+
+### Bug Fixes
+
+* when there is an error the query returns with the previous data instead of empty data ([#100](https://github.com/trojanowski/react-apollo-hooks/issues/100)) ([583da31](https://github.com/trojanowski/react-apollo-hooks/commit/583da31))
+
+
+
 <a name="0.4.3"></a>
 ## [0.4.3](https://github.com/trojanowski/react-apollo-hooks/compare/v0.4.2...v0.4.3) (2019-03-01)
 
