@@ -9,7 +9,7 @@ Use [Apollo Client](https://github.com/apollographql/apollo-client) as React
 
 `npm install react-apollo-hooks`
 
-If using yarn
+Or if using [yarn](https://yarnpkg.com/en/)
 
 
 `yarn add react-apollo-hooks`
