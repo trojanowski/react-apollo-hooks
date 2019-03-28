@@ -12,7 +12,7 @@ import ApolloClient, {
   WatchQueryOptions,
 } from 'apollo-client';
 import { DocumentNode } from 'graphql';
-import { useContext, useEffect, useMemo, useState } from 'react';
+import { useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { useApolloClient } from './ApolloContext';
 import { SSRContext } from './internal/SSRContext';
 import actHack from './internal/actHack';
@@ -96,6 +96,8 @@ export function useQuery<
       ? 'cache-first'
       : actualCachePolicy;
 
+  const lastResult = useRef(null);
+
   const watchQueryOptions: WatchQueryOptions<TVariables> = useMemo(
     () =>
       compact({
@@ -144,6 +146,12 @@ export function useQuery<
         };
       }
 
+      if (result.loading) {
+        data = {
+          ...(lastResult.current || {}).data,
+        };
+      }
+
       return {
         data,
         error:
@@ -161,6 +169,7 @@ export function useQuery<
     },
     [shouldSkip, responseId, observableQuery]
   );
+  lastResult.current = currentResult;
 
   useEffect(
     () => {
