@@ -131,8 +131,16 @@ export function useQuery<
 
   const [responseId, setResponseId] = useState(0);
 
-  const currentResult = useMemo<QueryHookState<TData>>(
+  const currentResult = useMemo<QueryHookResult<TData, TVariables>>(
     () => {
+      const helpers = {
+        fetchMore: observableQuery.fetchMore.bind(observableQuery),
+        refetch: observableQuery.refetch.bind(observableQuery),
+        startPolling: observableQuery.startPolling.bind(observableQuery),
+        stopPolling: observableQuery.stopPolling.bind(observableQuery),
+        updateQuery: observableQuery.updateQuery.bind(observableQuery),
+      };
+
       const result = observableQuery.currentResult();
 
       // return the old result data when there is an error
@@ -144,7 +152,19 @@ export function useQuery<
         };
       }
 
+      if (shouldSkip) {
+        // Taken from https://github.com/apollographql/react-apollo/blob/5cb63b3625ce5e4a3d3e4ba132eaec2a38ef5d90/src/Query.tsx#L376-L381
+        return {
+          ...helpers,
+          data: undefined,
+          error: undefined,
+          loading: false,
+          networkStatus: undefined,
+        };
+      }
+
       return {
+        ...helpers,
         data,
         error:
           result.errors && result.errors.length > 0
@@ -193,25 +213,6 @@ export function useQuery<
 
   ensureSupportedFetchPolicy(suspend, fetchPolicy);
 
-  const helpers = {
-    fetchMore: observableQuery.fetchMore.bind(observableQuery),
-    refetch: observableQuery.refetch.bind(observableQuery),
-    startPolling: observableQuery.startPolling.bind(observableQuery),
-    stopPolling: observableQuery.stopPolling.bind(observableQuery),
-    updateQuery: observableQuery.updateQuery.bind(observableQuery),
-  };
-
-  if (shouldSkip) {
-    // Taken from https://github.com/apollographql/react-apollo/blob/5cb63b3625ce5e4a3d3e4ba132eaec2a38ef5d90/src/Query.tsx#L376-L381
-    return {
-      ...helpers,
-      data: undefined,
-      error: undefined,
-      loading: false,
-      networkStatus: undefined,
-    };
-  }
-
   if (currentResult.partial) {
     if (suspend) {
       // throw a promise - use the react suspense to wait until the data is
@@ -224,7 +225,7 @@ export function useQuery<
     }
   }
 
-  return { ...helpers, ...currentResult };
+  return currentResult;
 }
 
 function ensureSupportedFetchPolicy(
