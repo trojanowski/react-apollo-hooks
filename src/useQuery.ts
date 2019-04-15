@@ -27,7 +27,7 @@ export interface QueryHookState<TData>
     ApolloCurrentResult<undefined | TData>,
     'error' | 'errors' | 'loading' | 'partial'
   > {
-  data: Partial<TData>;
+  data: Partial<TData> | undefined;
   // networkStatus is undefined for skipped queries or the ones using suspense
   networkStatus: NetworkStatus | undefined;
 }
@@ -156,7 +156,7 @@ export function useQuery<
         // Taken from https://github.com/apollographql/react-apollo/blob/5cb63b3625ce5e4a3d3e4ba132eaec2a38ef5d90/src/Query.tsx#L376-L381
         return {
           ...helpers,
-          data: {},
+          data: undefined,
           error: undefined,
           loading: false,
           networkStatus: undefined,
