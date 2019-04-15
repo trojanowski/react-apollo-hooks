@@ -174,7 +174,7 @@ it('should create a function to perform mutations', async () => {
     return (
       <TaskList
         onChange={task => toggleTask({ variables: { taskId: task.id } })}
-        tasks={data.tasks}
+        tasks={data!.tasks}
       />
     );
   }
@@ -230,7 +230,7 @@ it('should allow to pass options forwarded to the mutation', async () => {
 
     return (
       <>
-        <TaskList onChange={noop} tasks={data.tasks} />
+        <TaskList onChange={noop} tasks={data!.tasks} />
         <button data-testid="add-task-button" onClick={() => addTask()}>
           Add new task
         </button>
