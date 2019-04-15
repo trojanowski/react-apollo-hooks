@@ -27,7 +27,7 @@ export interface QueryHookState<TData>
     ApolloCurrentResult<undefined | TData>,
     'error' | 'errors' | 'loading' | 'partial'
   > {
-  data?: TData;
+  data: Partial<TData>;
   // networkStatus is undefined for skipped queries or the ones using suspense
   networkStatus: NetworkStatus | undefined;
 }
