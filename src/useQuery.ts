@@ -12,7 +12,9 @@ import ApolloClient, {
   WatchQueryOptions,
 } from 'apollo-client';
 import { DocumentNode } from 'graphql';
-import { useContext, useEffect, useMemo, useState } from 'react';
+import pick from 'lodash/pick';
+import { useContext, useEffect, useMemo, useRef, useState } from 'react';
+
 import { useApolloClient } from './ApolloContext';
 import { SSRContext } from './internal/SSRContext';
 import actHack from './internal/actHack';
@@ -123,32 +125,89 @@ export function useQuery<
       fetchResults,
     ]
   );
-  const observableQuery = useMemo(
-    () =>
-      getCachedObservableQuery<TData, TVariables>(client, watchQueryOptions),
-    [client, watchQueryOptions]
+
+  const previousClient = useRef<ApolloClient<TCache>>(client);
+  const previousQuery = useRef<DocumentNode>(query);
+  const observableQuery = useRef<ObservableQuery<TData, TVariables> | null>(
+    null
   );
+  const isObservableQueryInitialized = useRef<boolean>(false);
+
+  if (previousClient.current !== client || previousQuery.current !== query) {
+    observableQuery.current = null;
+    isObservableQueryInitialized.current = false;
+
+    if (previousClient.current !== client) {
+      previousClient.current = client;
+    }
+
+    if (previousQuery.current !== query) {
+      previousQuery.current = query;
+    }
+  }
 
   const [responseId, setResponseId] = useState(0);
+
+  const invalidateCurrentResult = () => {
+    // A hack to get rid React warnings during tests. The default
+    // implementation of `actHack` just invokes the callback immediately.
+    // In tests, it's replaced with `act` from react-testing-library.
+    // A better solution welcome.
+    actHack(() => {
+      setResponseId(x => x + 1);
+    });
+  };
+
+  let currentObservableQuery: ObservableQuery<TData, TVariables>;
+  if (observableQuery.current) {
+    currentObservableQuery = observableQuery.current;
+  } else {
+    currentObservableQuery = getCachedObservableQuery<TData, TVariables>(
+      client,
+      watchQueryOptions
+    );
+    observableQuery.current = currentObservableQuery;
+  }
+
+  useEffect(
+    () => {
+      if (isObservableQueryInitialized.current) {
+        currentObservableQuery.setOptions(
+          pick(watchQueryOptions, [
+            'errorPolicy',
+            'fetchPolicy',
+            'fetchResults',
+            'notifyOnNetworkStatusChange',
+            'pollInterval',
+            'variables',
+          ])
+        );
+        invalidateCurrentResult();
+      } else {
+        isObservableQueryInitialized.current = true;
+      }
+    },
+    [currentObservableQuery, watchQueryOptions]
+  );
 
   const currentResult = useMemo<QueryHookResult<TData, TVariables>>(
     () => {
       const helpers = {
-        fetchMore: observableQuery.fetchMore.bind(observableQuery),
-        refetch: observableQuery.refetch.bind(observableQuery),
-        startPolling: observableQuery.startPolling.bind(observableQuery),
-        stopPolling: observableQuery.stopPolling.bind(observableQuery),
-        updateQuery: observableQuery.updateQuery.bind(observableQuery),
+        fetchMore: currentObservableQuery.fetchMore.bind(observableQuery),
+        refetch: currentObservableQuery.refetch.bind(observableQuery),
+        startPolling: currentObservableQuery.startPolling.bind(observableQuery),
+        stopPolling: currentObservableQuery.stopPolling.bind(observableQuery),
+        updateQuery: currentObservableQuery.updateQuery.bind(observableQuery),
       };
 
-      const result = observableQuery.currentResult();
+      const result = currentObservableQuery.currentResult();
 
       // return the old result data when there is an error
       let data = result.data as TData;
       if (result.error || result.errors) {
         data = {
           ...result.data,
-          ...(observableQuery.getLastResult() || {}).data,
+          ...(currentObservableQuery.getLastResult() || {}).data,
         };
       }
 
@@ -179,7 +238,7 @@ export function useQuery<
         partial: result.partial,
       };
     },
-    [shouldSkip, responseId, observableQuery]
+    [shouldSkip, responseId, currentObservableQuery]
   );
 
   useEffect(
@@ -188,16 +247,7 @@ export function useQuery<
         return;
       }
 
-      const invalidateCurrentResult = () => {
-        // A hack to get rid React warnings during tests. The default
-        // implementation of `actHack` just invokes the callback immediately.
-        // In tests, it's replaced with `act` from react-testing-library.
-        // A better solution welcome.
-        actHack(() => {
-          setResponseId(x => x + 1);
-        });
-      };
-      const subscription = observableQuery.subscribe(
+      const subscription = currentObservableQuery.subscribe(
         invalidateCurrentResult,
         invalidateCurrentResult
       );
@@ -217,11 +267,11 @@ export function useQuery<
     if (suspend) {
       // throw a promise - use the react suspense to wait until the data is
       // available
-      throw observableQuery.result();
+      throw currentObservableQuery.result();
     }
 
     if (ssrInUse) {
-      ssrManager!.register(observableQuery.result());
+      ssrManager!.register(currentObservableQuery.result());
     }
   }
 
