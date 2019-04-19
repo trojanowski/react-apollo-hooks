@@ -4,5 +4,3 @@ export * from './useSubscription';
 export * from './ApolloContext';
 export * from './SuspenseSSR';
 export * from './getMarkupFromTree';
-export * from './ApolloOperationError';
-export * from './SillyErrorBoundary';

@@ -6,11 +6,10 @@ import ApolloClient, {
 } from 'apollo-client';
 import { FetchResult } from 'apollo-link';
 import { DocumentNode, GraphQLError } from 'graphql';
-import actHack from './internal/actHack';
-
 import React from 'react';
+
 import { useApolloClient } from './ApolloContext';
-import { ApolloOperationError } from './ApolloOperationError';
+import actHack from './internal/actHack';
 import { Omit, objToKey } from './utils';
 
 export type MutationUpdaterFn<TData = Record<string, any>> = (
@@ -46,7 +45,7 @@ export interface ExecutionResult<T = Record<string, any>> {
 export interface MutationResult<TData> {
   called: boolean;
   data?: TData;
-  error?: ApolloOperationError;
+  error?: ApolloError;
   hasError: boolean;
   loading: boolean;
 }
@@ -105,7 +104,7 @@ export function useMutation<TData, TVariables = OperationVariables>(
   const onMutationError = (error: ApolloError, mutationId: number) => {
     if (isMostRecentMutation(mutationId)) {
       mergeResult({
-        error: new ApolloOperationError(error, mutation, baseOptions),
+        error,
         hasError: true,
         loading: false,
       });
@@ -157,12 +156,13 @@ export function useMutation<TData, TVariables = OperationVariables>(
             onMutationError(err, mutationId);
             if (rethrow) {
               reject(err);
+              return;
             }
             resolve(({} as unknown) as ExecutionResult<TData>);
           });
       });
     },
-    [client, mutation, baseOptions, objToKey(baseOptions)]
+    [client, mutation, objToKey(baseOptions)]
   );
 
   return [runMutation, result];

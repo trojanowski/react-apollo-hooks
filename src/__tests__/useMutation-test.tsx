@@ -1,17 +1,11 @@
+import ApolloClient, { ApolloError } from 'apollo-client';
 import gql from 'graphql-tag';
 import React from 'react';
-import {
-  act,
-  cleanup,
-  fireEvent,
-  render,
-  testHook,
-} from 'react-testing-library';
+import { renderHook } from 'react-hooks-testing-library';
+import { cleanup, fireEvent, render } from 'react-testing-library';
 
 import { GraphQLError } from 'graphql';
 import { ApolloProvider, useMutation, useQuery } from '..';
-import { ApolloOperationError, isMutationError } from '../ApolloOperationError';
-import { SillyErrorBoundary } from '../SillyErrorBoundary';
 import createClient from '../__testutils__/createClient';
 import { SAMPLE_TASKS } from '../__testutils__/data';
 import noop from '../__testutils__/noop';
@@ -169,6 +163,31 @@ function TaskList({
   );
 }
 
+function renderMutationHook({
+  client,
+  rethrow = true,
+}: {
+  client: ApolloClient<object>;
+  rethrow?: boolean;
+}) {
+  return renderHook(
+    () =>
+      useMutation<any, { input: Partial<TaskFragment> }>(ADD_TASK_MUTATION, {
+        rethrow,
+        variables: {
+          input: {
+            text: 'Learn Jest',
+          },
+        },
+      }),
+    {
+      wrapper: ({ children }) => (
+        <ApolloProvider client={client}>{children}</ApolloProvider>
+      ),
+    }
+  );
+}
+
 afterEach(cleanup);
 
 it('should create a function to perform mutations', async () => {
@@ -270,29 +289,12 @@ it('should allow to pass options forwarded to the mutation', async () => {
 
 it('should provide called property for the first time call', async () => {
   const client = createClient({ mocks: TASKS_MOCKS });
-
-  const { result } = testHook(
-    () =>
-      useMutation<any, { input: Partial<TaskFragment> }>(ADD_TASK_MUTATION, {
-        variables: {
-          input: {
-            text: 'Learn Jest',
-          },
-        },
-      }),
-    {
-      wrapper: ({ children }) => (
-        <ApolloProvider client={client}>{children}</ApolloProvider>
-      ),
-    }
-  );
+  const { result } = renderMutationHook({ client });
 
   const [addTask, initialState] = result.current;
   expect(initialState.called).toBe(false);
 
-  act(() => {
-    addTask();
-  });
+  addTask();
 
   const [, calledState] = result.current;
   expect(calledState.called).toBe(true);
@@ -305,29 +307,12 @@ it('should provide called property for the first time call', async () => {
 
 it('should provide loading property during the mutation processing', async () => {
   const client = createClient({ mocks: TASKS_MOCKS });
-
-  const { result } = testHook(
-    () =>
-      useMutation<any, { input: Partial<TaskFragment> }>(ADD_TASK_MUTATION, {
-        variables: {
-          input: {
-            text: 'Learn Jest',
-          },
-        },
-      }),
-    {
-      wrapper: ({ children }) => (
-        <ApolloProvider client={client}>{children}</ApolloProvider>
-      ),
-    }
-  );
+  const { result } = renderMutationHook({ client });
 
   const [addTask, initialState] = result.current;
   expect(initialState.loading).toBe(false);
 
-  act(() => {
-    addTask();
-  });
+  addTask();
 
   const [, calledState] = result.current;
   expect(calledState.loading).toBe(true);
@@ -343,40 +328,19 @@ it('should provide error and hasError properties for network error', async () =>
     { ...ADD_TASK_MUTATION_MOCK, error: new Error('Network has failed') },
   ];
   const client = createClient({ mocks });
-
-  const { result } = testHook(
-    () =>
-      useMutation<any, { input: Partial<TaskFragment> }>(ADD_TASK_MUTATION, {
-        rethrow: false,
-        variables: {
-          input: {
-            text: 'Learn Jest',
-          },
-        },
-      }),
-    {
-      wrapper: ({ children }) => (
-        <ApolloProvider client={client}>{children}</ApolloProvider>
-      ),
-    }
-  );
+  const { result } = renderMutationHook({ client, rethrow: false });
 
   const [addTask, initialState] = result.current;
   expect(initialState.error).toBe(undefined);
   expect(initialState.hasError).toBe(false);
 
-  act(() => {
-    addTask();
-  });
+  addTask();
 
   await wait();
 
   const [, calledState] = result.current;
   expect(calledState.hasError).toBe(true);
-  expect(isMutationError(calledState.error!)).toBe(true);
-  expect((calledState.error! as ApolloOperationError).operationDoc).toBe(
-    ADD_TASK_MUTATION
-  );
+  expect(calledState.error).toBeInstanceOf(ApolloError);
   expect(calledState.error!.message).toMatchInlineSnapshot(
     `"Network error: Network has failed"`
   );
@@ -401,40 +365,19 @@ it('should provide error and hasError properties for graphql errors', async () =
     },
   ];
   const client = createClient({ mocks });
-
-  const { result } = testHook(
-    () =>
-      useMutation<any, { input: Partial<TaskFragment> }>(ADD_TASK_MUTATION, {
-        rethrow: false,
-        variables: {
-          input: {
-            text: 'Learn Jest',
-          },
-        },
-      }),
-    {
-      wrapper: ({ children }) => (
-        <ApolloProvider client={client}>{children}</ApolloProvider>
-      ),
-    }
-  );
+  const { result } = renderMutationHook({ client, rethrow: false });
 
   const [addTask, initialState] = result.current;
   expect(initialState.error).toBe(undefined);
   expect(initialState.hasError).toBe(false);
 
-  act(() => {
-    addTask();
-  });
+  addTask();
 
   await wait();
 
   const [, calledState] = result.current;
   expect(calledState.hasError).toBe(true);
-  expect(isMutationError(calledState.error!)).toBe(true);
-  expect((calledState.error! as ApolloOperationError).operationDoc).toBe(
-    ADD_TASK_MUTATION
-  );
+  expect(calledState.error).toBeInstanceOf(ApolloError);
   expect(calledState.error!.graphQLErrors).toMatchInlineSnapshot(`
 Array [
   Object {
@@ -457,50 +400,27 @@ it('should not throw error with rethrow = false', async () => {
     { ...ADD_TASK_MUTATION_MOCK, error: new Error('Network has failed') },
   ];
   const client = createClient({ mocks });
-
-  const onError = jest.fn();
-
-  const { result } = testHook(
-    () =>
-      useMutation<any, { input: Partial<TaskFragment> }>(ADD_TASK_MUTATION, {
-        rethrow: false,
-        variables: {
-          input: {
-            text: 'Learn Jest',
-          },
-        },
-      }),
-    {
-      wrapper: ({ children }) => (
-        <ApolloProvider client={client}>
-          <SillyErrorBoundary onError={onError}>{children}</SillyErrorBoundary>
-        </ApolloProvider>
-      ),
-    }
-  );
+  const { result } = renderMutationHook({ client, rethrow: false });
 
   const [addTask] = result.current;
 
   let caughtError;
   try {
-    addTask();
+    await addTask();
   } catch (err) {
     caughtError = err;
   }
 
   await wait();
 
-  expect(caughtError).toBeFalsy();
-  expect(onError).toHaveBeenCalledTimes(0);
+  expect(caughtError).toBeUndefined();
 });
 
 it('should throw error asynchronously with rethrow = true', async () => {
   const mocks = [ADD_TASK_MUTATION_MOCK];
   const client = createClient({ mocks });
 
-  const onError = jest.fn();
-
-  const { result } = testHook(
+  const { result } = renderHook(
     () =>
       useMutation<any, { input: Partial<TaskFragment> }>(ADD_TASK_MUTATION, {
         variables: {
@@ -511,9 +431,7 @@ it('should throw error asynchronously with rethrow = true', async () => {
       }),
     {
       wrapper: ({ children }) => (
-        <ApolloProvider client={client}>
-          <SillyErrorBoundary onError={onError}>{children}</SillyErrorBoundary>
-        </ApolloProvider>
+        <ApolloProvider client={client}>{children}</ApolloProvider>
       ),
     }
   );
@@ -528,5 +446,4 @@ it('should throw error asynchronously with rethrow = true', async () => {
   }
 
   expect(caughtError).toBeTruthy();
-  expect(onError).toHaveBeenCalledTimes(0);
 });

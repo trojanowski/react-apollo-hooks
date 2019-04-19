@@ -13,7 +13,6 @@
       true,
       [
         "jest-dom",
-        "jest-mock-console",
         "jest-react-profiler",
         "graphql-tag",
         "apollo-link",
@@ -21,6 +20,7 @@
         "apollo-link-mock",
         "apollo-cache-inmemory",
         "react-dom",
+        "react-hooks-testing-library",
         "react-testing-library"
       ]
     ],
