@@ -118,7 +118,11 @@ function Tasks({ query, ...options }: TasksProps) {
     return <>{error.message}</>;
   }
 
-  if (loading) {
+  if (loading && data.tasks) {
+    return <>Loading without suspense and with stale data</>;
+  }
+
+  if (loading && !data.tasks) {
     return <>Loading without suspense</>;
   }
 
@@ -325,7 +329,7 @@ it('should support updating query variables without suspense', async () => {
 
   expect(container).toMatchInlineSnapshot(`
 <div>
-  Loading without suspense
+  Loading without suspense and stale data
 </div>
 `);
 
