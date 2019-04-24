@@ -188,6 +188,8 @@ export function useQuery<
         return;
       }
 
+      let subscription: ZenObservable.Subscription | undefined;
+
       const invalidateCurrentResult = () => {
         // A hack to get rid React warnings during tests. The default
         // implementation of `actHack` just invokes the callback immediately.
@@ -197,16 +199,45 @@ export function useQuery<
           setResponseId(x => x + 1);
         });
       };
-      const subscription = observableQuery.subscribe(
-        invalidateCurrentResult,
-        invalidateCurrentResult
-      );
+
+      // from: https://github.com/apollographql/react-apollo/blob/master/src/Query.tsx#L363
+      // after a error on refetch, without this fix, refetch never works again
+      function invalidateErrorResult() {
+        unsubscribe();
+
+        const lastError = observableQuery.getLastError();
+        const lastResult = observableQuery.getLastResult();
+
+        if (!suspend) {
+          observableQuery.resetLastResults();
+          subscribe();
+        }
+
+        Object.assign(observableQuery, { lastError, lastResult });
+
+        actHack(() => {
+          setResponseId(x => x + 1);
+        });
+      }
 
       invalidateCachedObservableQuery(client, watchQueryOptions);
 
-      return () => {
-        subscription.unsubscribe();
-      };
+      function subscribe() {
+        subscription = observableQuery.subscribe(
+          invalidateCurrentResult,
+          invalidateErrorResult
+        );
+      }
+
+      function unsubscribe() {
+        if (subscription) {
+          subscription.unsubscribe();
+        }
+        subscription = undefined;
+      }
+
+      subscribe();
+      return unsubscribe;
     },
     [shouldSkip, observableQuery]
   );
