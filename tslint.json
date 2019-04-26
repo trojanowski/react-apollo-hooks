@@ -20,6 +20,7 @@
         "apollo-link-mock",
         "apollo-cache-inmemory",
         "react-dom",
+        "react-hooks-testing-library",
         "react-testing-library"
       ]
     ],

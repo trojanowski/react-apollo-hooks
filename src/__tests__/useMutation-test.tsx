@@ -1,7 +1,10 @@
+import ApolloClient, { ApolloError } from 'apollo-client';
 import gql from 'graphql-tag';
 import React from 'react';
+import { renderHook } from 'react-hooks-testing-library';
 import { cleanup, fireEvent, render } from 'react-testing-library';
 
+import { GraphQLError } from 'graphql';
 import { ApolloProvider, useMutation, useQuery } from '..';
 import createClient from '../__testutils__/createClient';
 import { SAMPLE_TASKS } from '../__testutils__/data';
@@ -9,82 +12,6 @@ import noop from '../__testutils__/noop';
 import wait from '../__testutils__/wait';
 
 jest.mock('../internal/actHack');
-
-const TASKS_MOCKS = [
-  {
-    request: {
-      query: gql`
-        query TasksQuery {
-          tasks {
-            id
-            text
-            completed
-            __typename
-          }
-        }
-      `,
-      variables: {},
-    },
-    result: {
-      data: {
-        __typename: 'Query',
-        tasks: [...SAMPLE_TASKS],
-      },
-    },
-  },
-
-  {
-    request: {
-      query: gql`
-        mutation ToggleTaskMutation($taskId: ID!) {
-          toggleTask(taskId: $taskId) {
-            id
-            completed
-            __typename
-          }
-        }
-      `,
-      variables: { taskId: '1' },
-    },
-    result: {
-      data: {
-        __typename: 'Mutation',
-        toggleTask: {
-          __typename: 'Task',
-          completed: false,
-          id: '1',
-        },
-      },
-    },
-  },
-
-  {
-    request: {
-      query: gql`
-        mutation AddTaskMutation($input: AddTaskMutationInput!) {
-          addTask(input: $input) {
-            id
-            text
-            completed
-            __typename
-          }
-        }
-      `,
-      variables: { input: { text: 'Learn Jest' } },
-    },
-    result: {
-      data: {
-        __typename: 'Mutation',
-        addTask: {
-          __typename: 'Task',
-          completed: false,
-          id: '4',
-          text: 'Learn Jest',
-        },
-      },
-    },
-  },
-];
 
 const TASKS_QUERY = gql`
   query TasksQuery {
@@ -96,6 +23,28 @@ const TASKS_QUERY = gql`
   }
 `;
 
+const TASKS_QUERY_MOCK = {
+  request: {
+    query: gql`
+      query TasksQuery {
+        tasks {
+          id
+          text
+          completed
+          __typename
+        }
+      }
+    `,
+    variables: {},
+  },
+  result: {
+    data: {
+      __typename: 'Query',
+      tasks: [...SAMPLE_TASKS],
+    },
+  },
+};
+
 const TOGGLE_TASK_MUTATION = gql`
   mutation ToggleTaskMutation($taskId: ID!) {
     toggleTask(taskId: $taskId) {
@@ -104,6 +53,31 @@ const TOGGLE_TASK_MUTATION = gql`
     }
   }
 `;
+
+const TOGGLE_TASK_MUTATION_MOCK = {
+  request: {
+    query: gql`
+      mutation ToggleTaskMutation($taskId: ID!) {
+        toggleTask(taskId: $taskId) {
+          id
+          completed
+          __typename
+        }
+      }
+    `,
+    variables: { taskId: '1' },
+  },
+  result: {
+    data: {
+      __typename: 'Mutation',
+      toggleTask: {
+        __typename: 'Task',
+        completed: false,
+        id: '1',
+      },
+    },
+  },
+};
 
 const ADD_TASK_MUTATION = gql`
   mutation AddTaskMutation($input: AddTaskMutationInput!) {
@@ -114,6 +88,39 @@ const ADD_TASK_MUTATION = gql`
     }
   }
 `;
+
+const ADD_TASK_MUTATION_MOCK = {
+  request: {
+    query: gql`
+      mutation AddTaskMutation($input: AddTaskMutationInput!) {
+        addTask(input: $input) {
+          id
+          text
+          completed
+          __typename
+        }
+      }
+    `,
+    variables: { input: { text: 'Learn Jest' } },
+  },
+  result: {
+    data: {
+      __typename: 'Mutation',
+      addTask: {
+        __typename: 'Task',
+        completed: false,
+        id: '4',
+        text: 'Learn Jest',
+      },
+    },
+  },
+};
+
+const TASKS_MOCKS = [
+  TASKS_QUERY_MOCK,
+  TOGGLE_TASK_MUTATION_MOCK,
+  ADD_TASK_MUTATION_MOCK,
+];
 
 interface TaskFragment {
   id: number;
@@ -156,12 +163,37 @@ function TaskList({
   );
 }
 
+function renderMutationHook({
+  client,
+  rethrow = true,
+}: {
+  client: ApolloClient<object>;
+  rethrow?: boolean;
+}) {
+  return renderHook(
+    () =>
+      useMutation<any, { input: Partial<TaskFragment> }>(ADD_TASK_MUTATION, {
+        rethrow,
+        variables: {
+          input: {
+            text: 'Learn Jest',
+          },
+        },
+      }),
+    {
+      wrapper: ({ children }) => (
+        <ApolloProvider client={client}>{children}</ApolloProvider>
+      ),
+    }
+  );
+}
+
 afterEach(cleanup);
 
 it('should create a function to perform mutations', async () => {
   function TasksWithMutation() {
     const { data, error, loading } = useQuery(TASKS_QUERY);
-    const toggleTask = useMutation(TOGGLE_TASK_MUTATION);
+    const [toggleTask] = useMutation(TOGGLE_TASK_MUTATION);
 
     if (error) {
       throw error;
@@ -202,7 +234,7 @@ it('should create a function to perform mutations', async () => {
 it('should allow to pass options forwarded to the mutation', async () => {
   function TasksWithMutation() {
     const { data, error, loading } = useQuery(TASKS_QUERY);
-    const addTask = useMutation<any, { input: Partial<TaskFragment> }>(
+    const [addTask] = useMutation<any, { input: Partial<TaskFragment> }>(
       ADD_TASK_MUTATION,
       {
         update: (proxy, mutationResult) => {
@@ -253,4 +285,165 @@ it('should allow to pass options forwarded to the mutation', async () => {
 
   expect(container.querySelectorAll('li')).toHaveLength(4);
   expect(container.querySelectorAll('li')[3].textContent).toBe('Learn Jest');
+});
+
+it('should provide called property for the first time call', async () => {
+  const client = createClient({ mocks: TASKS_MOCKS });
+  const { result } = renderMutationHook({ client });
+
+  const [addTask, initialState] = result.current;
+  expect(initialState.called).toBe(false);
+
+  addTask();
+
+  const [, calledState] = result.current;
+  expect(calledState.called).toBe(true);
+
+  await wait();
+
+  const [, loadedState] = result.current;
+  expect(loadedState.called).toBe(true);
+});
+
+it('should provide loading property during the mutation processing', async () => {
+  const client = createClient({ mocks: TASKS_MOCKS });
+  const { result } = renderMutationHook({ client });
+
+  const [addTask, initialState] = result.current;
+  expect(initialState.loading).toBe(false);
+
+  addTask();
+
+  const [, calledState] = result.current;
+  expect(calledState.loading).toBe(true);
+
+  await wait();
+
+  const [, loadedState] = result.current;
+  expect(loadedState.loading).toBe(false);
+});
+
+it('should provide error and hasError properties for network error', async () => {
+  const mocks = [
+    { ...ADD_TASK_MUTATION_MOCK, error: new Error('Network has failed') },
+  ];
+  const client = createClient({ mocks });
+  const { result } = renderMutationHook({ client, rethrow: false });
+
+  const [addTask, initialState] = result.current;
+  expect(initialState.error).toBe(undefined);
+  expect(initialState.hasError).toBe(false);
+
+  addTask();
+
+  await wait();
+
+  const [, calledState] = result.current;
+  expect(calledState.hasError).toBe(true);
+  expect(calledState.error).toBeInstanceOf(ApolloError);
+  expect(calledState.error!.message).toMatchInlineSnapshot(
+    `"Network error: Network has failed"`
+  );
+
+  await wait();
+
+  const [, laterState] = result.current;
+  expect(laterState.hasError).toBe(true);
+});
+
+it('should provide error and hasError properties for graphql errors', async () => {
+  const mocks = [
+    {
+      ...ADD_TASK_MUTATION_MOCK,
+      result: {
+        errors: [
+          { message: 'I am the error' },
+          { message: 'I am another error' },
+        ] as GraphQLError[],
+        ...ADD_TASK_MUTATION_MOCK.result,
+      },
+    },
+  ];
+  const client = createClient({ mocks });
+  const { result } = renderMutationHook({ client, rethrow: false });
+
+  const [addTask, initialState] = result.current;
+  expect(initialState.error).toBe(undefined);
+  expect(initialState.hasError).toBe(false);
+
+  addTask();
+
+  await wait();
+
+  const [, calledState] = result.current;
+  expect(calledState.hasError).toBe(true);
+  expect(calledState.error).toBeInstanceOf(ApolloError);
+  expect(calledState.error!.graphQLErrors).toMatchInlineSnapshot(`
+Array [
+  Object {
+    "message": "I am the error",
+  },
+  Object {
+    "message": "I am another error",
+  },
+]
+`);
+
+  await wait();
+
+  const [, laterState] = result.current;
+  expect(laterState.hasError).toBe(true);
+});
+
+it('should not throw error with rethrow = false', async () => {
+  const mocks = [
+    { ...ADD_TASK_MUTATION_MOCK, error: new Error('Network has failed') },
+  ];
+  const client = createClient({ mocks });
+  const { result } = renderMutationHook({ client, rethrow: false });
+
+  const [addTask] = result.current;
+
+  let caughtError;
+  try {
+    await addTask();
+  } catch (err) {
+    caughtError = err;
+  }
+
+  await wait();
+
+  expect(caughtError).toBeUndefined();
+});
+
+it('should throw error asynchronously with rethrow = true', async () => {
+  const mocks = [ADD_TASK_MUTATION_MOCK];
+  const client = createClient({ mocks });
+
+  const { result } = renderHook(
+    () =>
+      useMutation<any, { input: Partial<TaskFragment> }>(ADD_TASK_MUTATION, {
+        variables: {
+          input: {
+            text: 'I am the error',
+          },
+        },
+      }),
+    {
+      wrapper: ({ children }) => (
+        <ApolloProvider client={client}>{children}</ApolloProvider>
+      ),
+    }
+  );
+
+  const [addTask] = result.current;
+
+  let caughtError;
+  try {
+    await addTask();
+  } catch (err) {
+    caughtError = err;
+  }
+
+  expect(caughtError).toBeTruthy();
 });
