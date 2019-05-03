@@ -30,6 +30,9 @@
     "url": "https://github.com/trojanowski/react-apollo-hooks.git"
   },
   "jest": {
+    "roots": [
+      "<rootDir>/src/"
+    ],
     "setupTestFrameworkScriptFile": "./src/__testutils__/setupTests.ts",
     "transform": {
       "^.+\\.(ts|tsx)$": "babel-jest"

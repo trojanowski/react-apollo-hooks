@@ -111,7 +111,6 @@ describe('useQueryLoader', () => {
   Loading
 </div>
 `);
-
     await wait();
 
     expect(container).toMatchInlineSnapshot(`
