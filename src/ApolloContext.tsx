@@ -6,17 +6,31 @@ const ApolloContext = React.createContext<null | ApolloClient<any>>(null);
 export interface ApolloProviderProps<TCacheShape> {
   readonly children?: ReactNode;
   readonly client: ApolloClient<TCacheShape>;
+  defaultLoadingComponent?: React.ComponentType<any>;
+  defaultErrorComponent?: React.ComponentType<any>;
 }
+
+const additionalOptionsMap = new WeakMap();
 
 export function ApolloProvider<TCacheShape = any>({
   client,
   children,
+  ...additionalOpts
 }: ApolloProviderProps<TCacheShape>): ReactElement<
   ApolloProviderProps<TCacheShape>
 > {
+  additionalOptionsMap.set(client, additionalOpts);
   return (
     <ApolloContext.Provider value={client}>{children}</ApolloContext.Provider>
   );
+}
+
+export function useReactApolloHooksOptions() {
+  const client = useContext(ApolloContext);
+  if (!client) {
+    throw new Error('Could not find "client" in the context');
+  }
+  return additionalOptionsMap.get(client);
 }
 
 export function useApolloClient<TCache = object>(
