@@ -293,6 +293,46 @@ const MyComponent = () => {
 };
 ```
 
+## useQueryLoader
+
+If your logic to handle loading and error states is usually the same (and uses the same components to render these states), you can use the `useQueryLoader` hook to reduce boilerplate code. In order to use this hook, you'll first need to pass your components for rendering loading and error states to `ApolloProvider`:
+
+```javascript
+const Loader = () => <div>Loading...</div>;
+
+const ErrorMessage = ({ errorObject }) => (
+  <div>An error occurred: {errorObject.message}</div>
+);
+
+const App = () => (
+  <ApolloProvider
+    client={client}
+    defaultLoadingComponent={Loader}
+    defaultErrorComponent={ErrorMessage}
+  >
+    <MyRootComponent />
+  </ApolloProvider>
+);
+```
+
+Then in your components, `useQueryLoader` will take care of rendering loading and error states for you. You pass it a callback that renders data from successful query responses:
+
+```javascript
+const Dogs = () => {
+  return useQueryLoader(GET_DOGS)(({ data }) => (
+    <ul>
+      {data.dogs.map(dog => (
+        <li key={dog.id}>{dog.breed}</li>
+      ))}
+    </ul>
+  ));
+};
+```
+
+You can still of course use `useQuery` directly, for cases where you want to handle the loading or error state manually.
+
+Note that the `defaultLoadingComponent` should not have any required props, and `defaultErrorComponent` should be able to properly handle an `errorObject` prop that will be set to the GraphQL error returned by apollo-client.
+
 # Testing
 
 An example showing how to test components using react-apollo-hooks:
