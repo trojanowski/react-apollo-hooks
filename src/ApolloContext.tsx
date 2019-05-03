@@ -6,8 +6,8 @@ const ApolloContext = React.createContext<null | ApolloClient<any>>(null);
 export interface ApolloProviderProps<TCacheShape> {
   readonly children?: ReactNode;
   readonly client: ApolloClient<TCacheShape>;
-  defaultLoadingComponent?: React.ComponentType<any>;
-  defaultErrorComponent?: React.ComponentType<any>;
+  defaultLoadingComponent?: React.ComponentType<{}>;
+  defaultErrorComponent?: React.ComponentType<{ errorObject: Error }>;
 }
 
 const additionalOptionsMap = new WeakMap();
