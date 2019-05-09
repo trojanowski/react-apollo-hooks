@@ -165,6 +165,7 @@ export function useQuery<
         };
       }
 
+      // Taken from https://github.com/apollographql/react-apollo/blob/22f8ebf52b26b348d6be905d5b7fbbfea51c1541/src/Query.tsx#L455-L472
       if (
         partialRefetch &&
         Object.keys(result.data).length === 0 &&
