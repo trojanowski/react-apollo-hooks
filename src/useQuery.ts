@@ -172,12 +172,14 @@ export function useQuery<
         result.partial &&
         fetchPolicy !== 'cache-only'
       ) {
-        Object.assign(result.data, helpers, {
+        const partialRefetchResult = {
+          ...result.data,
+          ...helpers,
           loading: true,
           networkStatus: NetworkStatus.loading,
-        });
+        };
         helpers.refetch();
-        return result.data;
+        return partialRefetchResult;
       }
 
       return {
