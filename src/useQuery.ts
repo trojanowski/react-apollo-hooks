@@ -42,6 +42,7 @@ export interface QueryHookOptions<TVariables, TCache = object>
   ssr?: boolean;
   skip?: boolean;
   suspend?: boolean;
+  partialRefetch?: boolean;
 }
 
 export interface QueryHookResult<TData, TVariables>
@@ -67,6 +68,7 @@ export function useQuery<
     ssr = true,
     skip = false,
     suspend = false,
+    partialRefetch = false,
 
     // Watch options
     pollInterval,
@@ -161,6 +163,20 @@ export function useQuery<
           loading: false,
           networkStatus: undefined,
         };
+      }
+
+      if (
+        partialRefetch &&
+        Object.keys(result.data).length === 0 &&
+        result.partial &&
+        fetchPolicy !== 'cache-only'
+      ) {
+        Object.assign(result.data, helpers, {
+          loading: true,
+          networkStatus: NetworkStatus.loading,
+        });
+        helpers.refetch();
+        return result.data;
       }
 
       return {
