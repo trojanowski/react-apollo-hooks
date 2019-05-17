@@ -172,13 +172,18 @@ export function useQuery<
         result.partial &&
         fetchPolicy !== 'cache-only'
       ) {
-        const partialRefetchResult = {
+        data = {
           ...result.data,
+          ...(observableQuery.getLastResult() || {}).data,
+        };
+
+        const partialRefetchResult = {
           ...helpers,
+          data,
           loading: true,
           networkStatus: NetworkStatus.loading,
         };
-        helpers.refetch();
+        partialRefetchResult.refetch();
         return partialRefetchResult;
       }
 

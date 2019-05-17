@@ -84,6 +84,31 @@ const TASKS_MOCKS = [
       },
     },
   },
+
+  {
+    request: {
+      query: gql`
+        mutation AddTaskMissingFieldMutation($input: AddTaskMutationInput!) {
+          addTask(input: $input) {
+            id
+            text
+            __typename
+          }
+        }
+      `,
+      variables: { input: { text: 'Learn Jest' } },
+    },
+    result: {
+      data: {
+        __typename: 'Mutation',
+        addTask: {
+          __typename: 'Task',
+          id: '4',
+          text: 'Learn Jest',
+        },
+      },
+    },
+  },
 ];
 
 const TASKS_QUERY = gql`
@@ -111,6 +136,15 @@ const ADD_TASK_MUTATION = gql`
       id
       text
       completed
+    }
+  }
+`;
+
+const ADD_TASK_MISSING_FIELD_MUTATION = gql`
+  mutation AddTaskMissingFieldMutation($input: AddTaskMutationInput!) {
+    addTask(input: $input) {
+      id
+      text
     }
   }
 `;
@@ -253,4 +287,195 @@ it('should allow to pass options forwarded to the mutation', async () => {
 
   expect(container.querySelectorAll('li')).toHaveLength(4);
   expect(container.querySelectorAll('li')[3].textContent).toBe('Learn Jest');
+});
+
+it('should have an error if the mutation has a field missings', async () => {
+  // Added 1 more time the query mock for TASKS_QUERY, because of this comment
+  // https://github.com/apollographql/react-apollo/issues/617#issuecomment-29310361
+  TASKS_MOCKS.push({
+    request: {
+      query: gql`
+        query TasksQuery {
+          tasks {
+            id
+            text
+            completed
+            __typename
+          }
+        }
+      `,
+      variables: {},
+    },
+    result: {
+      data: {
+        __typename: 'Query',
+        tasks: [
+          ...SAMPLE_TASKS,
+          {
+            __typename: 'Task',
+            id: 4,
+            text: 'Learn Jest',
+          } as any,
+        ],
+      },
+    },
+  });
+
+  let tasks;
+  function TasksWithMutation() {
+    const { data, error, loading } = useQuery(TASKS_QUERY);
+    const addTask = useMutation<any, { input: Partial<TaskFragment> }>(
+      ADD_TASK_MISSING_FIELD_MUTATION,
+      {
+        update: (proxy, mutationResult) => {
+          const previousData = proxy.readQuery<{ tasks: TaskFragment[] }>({
+            query: TASKS_QUERY,
+          });
+          previousData!.tasks.push(mutationResult!.data!.addTask);
+          proxy.writeQuery({ data: previousData, query: TASKS_QUERY });
+        },
+        variables: {
+          input: {
+            text: 'Learn Jest',
+          },
+        },
+      }
+    );
+
+    tasks = data.tasks;
+    if (error) {
+      throw error;
+    }
+
+    if (loading) {
+      return <>Loading</>;
+    }
+
+    return (
+      <>
+        <ul>
+          {data &&
+            data.tasks &&
+            data.tasks.map((task: TaskFragment) => (
+              <li key={task.id}>{task.text}</li>
+            ))}
+        </ul>
+        <button data-testid="add-task-button" onClick={() => addTask()}>
+          Add new task
+        </button>
+      </>
+    );
+  }
+
+  const client = createClient({ mocks: TASKS_MOCKS });
+  const { container, getByTestId } = render(
+    <ApolloProvider client={client}>
+      <TasksWithMutation />
+    </ApolloProvider>
+  );
+
+  await wait();
+
+  const addTaskButton = getByTestId('add-task-button');
+  fireEvent.click(addTaskButton);
+  await wait();
+
+  expect(container.querySelectorAll('li')).toHaveLength(0);
+  expect(tasks).toBe(undefined);
+});
+
+it('should work if the mutation has a field missings and the partialRefetch is true', async () => {
+  // Added 1 more time the query mock for TASKS_QUERY, because of this comment
+  // https://github.com/apollographql/react-apollo/issues/617#issuecomment-29310361
+  TASKS_MOCKS.push({
+    request: {
+      query: gql`
+        query TasksQuery {
+          tasks {
+            id
+            text
+            completed
+            __typename
+          }
+        }
+      `,
+      variables: {},
+    },
+    result: {
+      data: {
+        __typename: 'Query',
+        tasks: [
+          ...SAMPLE_TASKS,
+          {
+            __typename: 'Task',
+            id: 4,
+            text: 'Learn Jest',
+          } as any,
+        ],
+      },
+    },
+  });
+
+  let tasks;
+  function TasksWithMutation() {
+    const { data, error, loading } = useQuery(TASKS_QUERY, {
+      partialRefetch: true,
+    });
+    const addTask = useMutation<any, { input: Partial<TaskFragment> }>(
+      ADD_TASK_MISSING_FIELD_MUTATION,
+      {
+        update: (proxy, mutationResult) => {
+          const previousData = proxy.readQuery<{ tasks: TaskFragment[] }>({
+            query: TASKS_QUERY,
+          });
+          previousData!.tasks.push(mutationResult!.data!.addTask);
+          proxy.writeQuery({ data: previousData, query: TASKS_QUERY });
+        },
+        variables: {
+          input: {
+            text: 'Learn Jest',
+          },
+        },
+      }
+    );
+
+    tasks = data.tasks;
+    if (error) {
+      throw error;
+    }
+
+    if (loading) {
+      return <>Loading</>;
+    }
+
+    return (
+      <>
+        <ul>
+          {data &&
+            data.tasks &&
+            data.tasks.map((task: TaskFragment) => (
+              <li key={task.id}>{task.text}</li>
+            ))}
+        </ul>
+        <button data-testid="add-task-button" onClick={() => addTask()}>
+          Add new task
+        </button>
+      </>
+    );
+  }
+
+  const client = createClient({ mocks: TASKS_MOCKS });
+  const { getByTestId } = render(
+    <ApolloProvider client={client}>
+      <TasksWithMutation />
+    </ApolloProvider>
+  );
+
+  await wait();
+
+  const addTaskButton = getByTestId('add-task-button');
+  fireEvent.click(addTaskButton);
+  await wait();
+
+  expect(tasks).toHaveLength(4);
 });
