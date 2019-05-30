@@ -4,11 +4,10 @@ import ApolloClient, {
   ApolloQueryResult,
   FetchMoreOptions,
   FetchMoreQueryOptions,
-  FetchPolicy,
   NetworkStatus,
   ObservableQuery,
   OperationVariables,
-  QueryOptions,
+  WatchQueryFetchPolicy,
   WatchQueryOptions,
 } from 'apollo-client';
 import { DocumentNode } from 'graphql';
@@ -33,7 +32,7 @@ export interface QueryHookState<TData>
 }
 
 export interface QueryHookOptions<TVariables, TCache = object>
-  extends Omit<QueryOptions<TVariables>, 'query'> {
+  extends Omit<WatchQueryOptions<TVariables>, 'query'> {
   // watch query options from apollo client
   notifyOnNetworkStatusChange?: boolean;
   pollInterval?: number;
@@ -230,7 +229,7 @@ export function useQuery<
 
 function ensureSupportedFetchPolicy(
   suspend: boolean,
-  fetchPolicy?: FetchPolicy
+  fetchPolicy?: WatchQueryFetchPolicy
 ) {
   if (suspend && fetchPolicy && fetchPolicy !== 'cache-first') {
     throw new Error(
