@@ -1,6 +1,6 @@
+import { cleanup, fireEvent, render } from '@testing-library/react';
 import gql from 'graphql-tag';
 import React from 'react';
-import { cleanup, fireEvent, render } from 'react-testing-library';
 
 import { ApolloProvider, useMutation, useQuery } from '..';
 import createClient from '../__testutils__/createClient';

@@ -20,7 +20,7 @@
         "apollo-link-mock",
         "apollo-cache-inmemory",
         "react-dom",
-        "react-testing-library"
+        "@testing-library/react"
       ]
     ],
     "no-submodule-imports": false,
