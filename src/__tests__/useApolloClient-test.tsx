@@ -1,5 +1,5 @@
+import { cleanup, render } from '@testing-library/react';
 import React from 'react';
-import { cleanup, render } from 'react-testing-library';
 
 import { ApolloProvider, useApolloClient } from '..';
 import createClient from '../__testutils__/createClient';

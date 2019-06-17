@@ -4,8 +4,6 @@ import ApolloClient, {
   ApolloQueryResult,
   FetchMoreOptions,
   FetchMoreQueryOptions,
-  FetchPolicy,
-  NetworkStatus,
   ObservableQuery,
   OperationVariables,
   QueryOptions,
@@ -28,8 +26,6 @@ export interface QueryHookState<TData>
     'error' | 'errors' | 'loading' | 'partial'
   > {
   data?: TData;
-  // networkStatus is undefined for skipped queries or the ones using suspense
-  networkStatus: NetworkStatus | undefined;
 }
 
 export interface QueryHookOptions<TVariables, TCache = object>
@@ -66,7 +62,6 @@ export function useQuery<
     // Hook options
     ssr = true,
     skip = false,
-    suspend = false,
 
     // Watch options
     pollInterval,
@@ -159,7 +154,6 @@ export function useQuery<
           data: undefined,
           error: undefined,
           loading: false,
-          networkStatus: undefined,
         };
       }
 
@@ -172,10 +166,7 @@ export function useQuery<
             : result.error,
         errors: result.errors,
         loading: result.loading,
-        // don't try to return `networkStatus` when suspense it's used
-        // because it's unreliable in that case
-        // https://github.com/trojanowski/react-apollo-hooks/pull/68
-        networkStatus: suspend ? undefined : result.networkStatus,
+        networkStatus: result.networkStatus,
         partial: result.partial,
       };
     },
@@ -191,7 +182,7 @@ export function useQuery<
       const invalidateCurrentResult = () => {
         // A hack to get rid React warnings during tests. The default
         // implementation of `actHack` just invokes the callback immediately.
-        // In tests, it's replaced with `act` from react-testing-library.
+        // In tests, it's replaced with `act` from @testing-library/react.
         // A better solution welcome.
         actHack(() => {
           setResponseId(x => x + 1);
@@ -211,30 +202,10 @@ export function useQuery<
     [shouldSkip, observableQuery]
   );
 
-  ensureSupportedFetchPolicy(suspend, fetchPolicy);
-
   if (currentResult.partial) {
-    if (suspend) {
-      // throw a promise - use the react suspense to wait until the data is
-      // available
-      throw observableQuery.result();
-    }
-
     if (ssrInUse) {
       ssrManager!.register(observableQuery.result());
     }
   }
-
   return currentResult;
-}
-
-function ensureSupportedFetchPolicy(
-  suspend: boolean,
-  fetchPolicy?: FetchPolicy
-) {
-  if (suspend && fetchPolicy && fetchPolicy !== 'cache-first') {
-    throw new Error(
-      `Fetch policy ${fetchPolicy} is not supported without 'suspend: false'`
-    );
-  }
 }

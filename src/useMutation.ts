@@ -45,5 +45,8 @@ export function useMutation<
 ): MutationFn<TData, TVariables> {
   const client = useApolloClient(overrideClient);
 
-  return options => client.mutate({ mutation, ...baseOptions, ...options });
+  return options =>
+    client.mutate({ mutation, ...baseOptions, ...options }) as Promise<
+      FetchResult<TData>
+    >;
 }

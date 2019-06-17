@@ -11,13 +11,14 @@ Use [Apollo Client](https://github.com/apollographql/apollo-client) as React
 
 Or if using [yarn](https://yarnpkg.com/en/)
 
-
 `yarn add react-apollo-hooks`
 
 # Example
 
 <https://codesandbox.io/s/8819w85jn9> is a port of Pupstagram sample app to
 react-apollo-hooks.
+
+> NOTE: This example is outdated and may not work properly. Support for React Suspense is no longer supported.
 
 # API
 
@@ -97,48 +98,7 @@ const Dogs = () => {
   const { data, error, loading } = useQuery(GET_DOGS);
   if (loading) {
     return <div>Loading...</div>;
-  };
-  if (error) {
-    return <div>Error! {error.message}</div>;
-  };
-
-  return (
-    <ul>
-      {data.dogs.map(dog => (
-        <li key={dog.id}>{dog.breed}</li>
-      ))}
-    </ul>
-  );
-};
-
-```
-
-### Usage with Suspense (experimental)
-
-You can use `useQuery` with [React Suspense](https://www.youtube.com/watch?v=6g3g0Q_XVb4)
-with the `{ suspend: true }` option.
-Please note that it's not yet recommended to use it in production. Please look
-at the [issue #69](https://github.com/trojanowski/react-apollo-hooks/issues/69)
-for details.
-
-Example usage:
-
-```javascript
-import gql from 'graphql-tag';
-import React, { Suspense } from 'react';
-import { useQuery } from 'react-apollo-hooks';
-
-const GET_DOGS = gql`
-  {
-    dogs {
-      id
-      breed
-    }
   }
-`;
-
-const Dogs = () => {
-  const { data, error } = useQuery(GET_DOGS, { suspend: true });
   if (error) {
     return <div>Error! {error.message}</div>;
   }
@@ -151,18 +111,7 @@ const Dogs = () => {
     </ul>
   );
 };
-
-const MyComponent = () => (
-  <Suspense fallback={<div>Loading...</div>}>
-    <Dogs />
-  </Suspense>
-);
 ```
-
-There are known issues with suspense mode for `useQuery`:
-
-* only the `cache-first` fetch policy is supported ([#13](https://github.com/trojanowski/react-apollo-hooks/issues/13))
-* `networkStatus` returned by `useQuery` is undefined ([#68](https://github.com/trojanowski/react-apollo-hooks/pull/68))
 
 ## useMutation
 
@@ -250,14 +199,14 @@ const NewMessagesIndicator = () => {
 
   if (loading) {
     return <div>Loading...</div>;
-  };
+  }
 
   if (error) {
     return <div>Error! {error.message}</div>;
-  };
+  }
 
   return <div>{data.newMessagesCount} new messages</div>;
-}
+};
 ```
 
 For more advanced use cases, e. g. when you'd like to show a notification
@@ -275,7 +224,7 @@ const { data, error, loading } = useSubscription(MY_SUBSCRIPTION, {
     // data and the Apollo client. You can use methods of the client to update
     // the Apollo cache:
     // https://www.apollographql.com/docs/react/advanced/caching.html#direct
-  }
+  },
   // ... rest options
 });
 ```
@@ -334,23 +283,4 @@ app.get('/', async (req, res) => {
   });
   res.send(renderedHtml);
 });
-```
-
-`getMarkupFromTree` supports `useQuery` hooks invoked in both suspense
-and non-suspense mode, but the [React.Suspense](https://reactjs.org/docs/react-api.html#reactsuspense)
-component is not supported. You can use `unstable_SuspenseSSR` provided
-by this library instead:
-
-```javascript
-import { unstable_SuspenseSSR as UnstableSuspenseSSR } from 'react-apollo-hooks';
-
-function MyComponent() {
-  return (
-    <UnstableSuspenseSSR fallback={<Spinner />}>
-      <div>
-        <ComponentWithGraphqlQuery />
-      </div>
-    </UnstableSuspenseSSR>
-  );
-}
 ```

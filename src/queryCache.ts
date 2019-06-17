@@ -2,6 +2,7 @@ import ApolloClient, {
   ObservableQuery,
   WatchQueryOptions,
 } from 'apollo-client';
+import { createHash } from 'crypto';
 import { print } from 'graphql/language/printer';
 
 import { objToKey } from './utils';
@@ -47,5 +48,8 @@ function getCacheKey<TVariables>({
   query,
   ...options
 }: WatchQueryOptions<TVariables>): string {
-  return `${print(query)}@@${objToKey(options)}`;
+  const cacheKey = createHash('sha1')
+    .update(`${print(query)}@@${objToKey(options)}`)
+    .digest('base64');
+  return cacheKey;
 }

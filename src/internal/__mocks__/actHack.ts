@@ -1,3 +1,3 @@
-import { act } from 'react-testing-library';
+import { act } from '@testing-library/react';
 
 export default act;

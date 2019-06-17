@@ -1,9 +1,9 @@
+import { act, cleanup, render } from '@testing-library/react';
 import { ApolloClient } from 'apollo-client';
 import { Operation } from 'apollo-link';
 import { MockSubscriptionLink } from 'apollo-link-mock';
 import gql from 'graphql-tag';
 import React from 'react';
-import { act, cleanup, render } from 'react-testing-library';
 
 import { ApolloProvider, useSubscription } from '..';
 import createClient from '../__testutils__/createClient';
