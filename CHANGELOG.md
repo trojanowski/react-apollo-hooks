@@ -2,6 +2,26 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+<a name="0.5.0"></a>
+# [0.5.0](https://github.com/trojanowski/react-apollo-hooks/compare/v0.4.5...v0.5.0) (2019-07-09)
+
+
+### Features
+
+* **useQuery:** returns `stale` as a part of `useQuery`. ([682be73](https://github.com/trojanowski/react-apollo-hooks/commit/682be73)), closes [#91](https://github.com/trojanowski/react-apollo-hooks/issues/91)
+* useMutation returns tuple with result ([e0d05fd](https://github.com/trojanowski/react-apollo-hooks/commit/e0d05fd))
+
+
+* Allow `cache-and-network` in apollo-client@^2.6.0 (#169) ([74cce42](https://github.com/trojanowski/react-apollo-hooks/commit/74cce42)), closes [#169](https://github.com/trojanowski/react-apollo-hooks/issues/169)
+
+
+### BREAKING CHANGES
+
+* useMutation returns tuple with result instead of just returning a mutating function
+* now Apollo Client >= 2.6.0 is required to use this library
+
+
+
 <a name="0.4.5"></a>
 ## [0.4.5](https://github.com/trojanowski/react-apollo-hooks/compare/v0.4.4...v0.4.5) (2019-04-06)
 
