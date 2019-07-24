@@ -130,37 +130,36 @@ export function useMutation<TData, TVariables = OperationVariables>(
   };
 
   const runMutation = React.useCallback(
-    (mutateOptions: MutationHookOptions<TData, TVariables> = {}) => {
-      return new Promise<FetchResult<TData>>((resolve, reject) => {
-        onMutationStart();
-        const mutationId = generateNewMutationId();
+    (
+      mutateOptions: MutationHookOptions<TData, TVariables> = {}
+    ): Promise<FetchResult<TData>> => {
+      onMutationStart();
+      const mutationId = generateNewMutationId();
 
-        // merge together variables from baseOptions (if specified)
-        // and the execution
-        const mutateVariables = options.variables
-          ? { ...mutateOptions.variables, ...options.variables }
-          : mutateOptions.variables;
+      // merge together variables from baseOptions (if specified)
+      // and the execution
+      const mutateVariables = options.variables
+        ? { ...mutateOptions.variables, ...options.variables }
+        : mutateOptions.variables;
 
-        client
-          .mutate({
-            mutation,
-            ...options,
-            ...mutateOptions,
-            variables: mutateVariables,
-          })
-          .then(response => {
-            onMutationCompleted(response, mutationId);
-            resolve(response as ExecutionResult<TData>);
-          })
-          .catch(err => {
-            onMutationError(err, mutationId);
-            if (rethrow) {
-              reject(err);
-              return;
-            }
-            resolve(({} as unknown) as ExecutionResult<TData>);
-          });
-      });
+      return client
+        .mutate({
+          mutation,
+          ...options,
+          ...mutateOptions,
+          variables: mutateVariables,
+        })
+        .then(response => {
+          onMutationCompleted(response, mutationId);
+          return response as ExecutionResult<TData>;
+        })
+        .catch(err => {
+          onMutationError(err, mutationId);
+          if (rethrow) {
+            throw err;
+          }
+          return ({} as unknown) as ExecutionResult<TData>;
+        });
     },
     [client, mutation, objToKey(baseOptions)]
   );
