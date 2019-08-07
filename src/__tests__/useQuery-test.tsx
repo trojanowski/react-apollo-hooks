@@ -131,16 +131,21 @@ function Tasks({ query, ...options }: TasksProps) {
 
 interface TasksWrapperProps extends TasksProps {
   client?: ApolloClient<object>;
+  TasksComponent?: React.FC<any>;
 }
 
 const SuspenseCompat = ({ children }: SuspenseProps) => <>{children}</>;
 
-function TasksWrapper({ client, ...props }: TasksWrapperProps) {
+function TasksWrapper({
+  client,
+  TasksComponent = Tasks,
+  ...props
+}: TasksWrapperProps) {
   const SuspenseComponent = props.suspend !== false ? Suspense : SuspenseCompat;
 
   const inner = (
     <SuspenseComponent fallback={<>Loading with suspense</>}>
-      <Tasks {...props} />
+      <TasksComponent {...props} />
     </SuspenseComponent>
   );
 
@@ -446,6 +451,89 @@ it('should support updating query variables with suspense', async () => {
   >
     <li>
       Learn GraphQL
+    </li>
+  </ul>
+</div>
+`);
+});
+
+it('should refetch the query', async () => {
+  const MY_TASKS_MOCKS: MockedResponse[] = [
+    {
+      request: { query: TASKS_QUERY, variables: {} },
+      result: {
+        data: { __typename: 'Query' },
+        errors: [new GraphQLError('Simulating GraphQL error')],
+      },
+    },
+    {
+      request: { query: TASKS_QUERY, variables: {} },
+      result: {
+        data: { __typename: 'Query', tasks: [...SAMPLE_TASKS] },
+      },
+    },
+  ];
+
+  const client = createClient({ mocks: MY_TASKS_MOCKS });
+
+  function MyTasks({ query, ...options }: TasksProps) {
+    const { data, error, loading, refetch } = useQuery(query, {
+      ...options,
+    });
+    const refetched = React.useRef(false);
+
+    React.useEffect(
+      () => {
+        if (!loading && !refetched.current) {
+          refetched.current = true;
+          refetch();
+        }
+      },
+      [loading]
+    );
+
+    if (error) {
+      return <>{error.message}</>;
+    }
+
+    if (loading) {
+      return <>Loading without suspense</>;
+    }
+
+    if (!data) {
+      return <>Skipped loading of data</>;
+    }
+
+    return <TaskList tasks={data.tasks} />;
+  }
+
+  const { container } = render(
+    <TasksWrapper
+      client={client}
+      query={TASKS_QUERY}
+      TasksComponent={MyTasks}
+    />
+  );
+
+  expect(container).toMatchInlineSnapshot(`
+<div>
+  Loading without suspense
+</div>
+`);
+
+  await wait();
+
+  expect(container).toMatchInlineSnapshot(`
+<div>
+  <ul>
+    <li>
+      Learn GraphQL
+    </li>
+    <li>
+      Learn React
+    </li>
+    <li>
+      Learn Apollo
     </li>
   </ul>
 </div>
