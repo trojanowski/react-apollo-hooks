@@ -1,11 +1,12 @@
 # react-apollo-hooks
 
+This library is deprecated. Please migrate to the 
+[official React Apollo Hooks](https://www.npmjs.com/package/@apollo/react-hooks).
+
+---
+
 Use [Apollo Client](https://github.com/apollographql/apollo-client) as React
 [hooks](https://reactjs.org/docs/hooks-intro.html).
-
-There is also a beta version of the
-[official React Apollo Hooks](https://www.npmjs.com/package/@apollo/react-hooks) available. I recommend considering it for new projects.
-This library will be deprecated after the release of the stable version of [@apollo/react-hooks](https://www.npmjs.com/package/@apollo/react-hooks).
 
 [![CircleCI](https://circleci.com/gh/trojanowski/react-apollo-hooks.svg?style=svg)](https://circleci.com/gh/trojanowski/react-apollo-hooks)
 
