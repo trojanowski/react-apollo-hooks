@@ -11,6 +11,7 @@
     "lib"
   ],
   "scripts": {
+    "install": "npm run build",
     "build:cjs": "rimraf lib && babel src --extensions '.ts' --extensions '.tsx' --ignore '**/__tests__' --ignore '**/__testutils__' -d lib",
     "build:es": "rimraf es && cross-env ES_MODULES=true babel src --extensions '.ts' --extensions '.tsx' --ignore '**/__tests__' --ignore '**/__testutils__' -d es",
     "build:typings": "tsc -p tsconfig.typings.json",
@@ -68,6 +69,7 @@
     ]
   },
   "peerDependencies": {
+    "@tarojs/taro": "^1.3.13",
     "apollo-client": "^2.6.0",
     "graphql": "*",
     "react": "^16.8.0"
@@ -92,6 +94,7 @@
     "apollo-link-mock": "^1.0.1",
     "babel-core": "^7.0.0-bridge.0",
     "babel-jest": "^23.6.0",
+    "babel-plugin-module-resolver": "^3.2.0",
     "cross-env": "^5.2.0",
     "graphql": "^14.0.2",
     "graphql-tag": "^2.10.0",

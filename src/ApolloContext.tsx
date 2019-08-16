@@ -1,5 +1,6 @@
 import ApolloClient from 'apollo-client';
 import React, { ReactElement, ReactNode, useContext } from 'react';
+import { getClient } from './client';
 
 const ApolloContext = React.createContext<null | ApolloClient<any>>(null);
 
@@ -22,7 +23,7 @@ export function ApolloProvider<TCacheShape = any>({
 export function useApolloClient<TCache = object>(
   overrideClient?: ApolloClient<TCache>
 ): ApolloClient<TCache> {
-  const client = useContext(ApolloContext);
+  const client = useContext(ApolloContext) || getClient();
 
   // Ensures that the number of hooks called from one render to another remains
   // constant, despite the Apollo client read from context being swapped for

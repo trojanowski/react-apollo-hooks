@@ -11,4 +11,16 @@ module.exports = {
       },
     ],
   ],
+  plugins: [
+    [
+      'module-resolver',
+      {
+        root: ['.'],
+        alias: {
+          react: '@tarojs/taro',
+          'react-dom': '@tarojs/taro',
+        },
+      },
+    ],
+  ],
 };
