@@ -130,7 +130,10 @@ export function useMutation<TData, TVariables = OperationVariables>(
   };
 
   const runMutation = React.useCallback(
-    (mutateOptions: MutationHookOptions<TData, TVariables> = {}, context: TData | undefined) => {
+    (
+      mutateOptions: MutationHookOptions<TData, TVariables> = {}, 
+      context: TData | undefined
+    ) => {
       return new Promise<FetchResult<TData>>((resolve, reject) => {
         onMutationStart();
         const mutationId = generateNewMutationId();
